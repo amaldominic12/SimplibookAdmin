@@ -1,0 +1,8 @@
+[06-Dec-2023 00:55:43 UTC] PHP Warning:  require(/home/simplib1/admin.simplibook.in/vendor/composer/../../app/Lib/Helpers.php): Failed to open stream: No such file or directory in /home/simplib1/admin.simplibook.in/vendor/composer/autoload_real.php on line 71
+[06-Dec-2023 00:55:43 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/simplib1/admin.simplibook.in/vendor/composer/../../app/Lib/Helpers.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/simplib1/admin.simplibook.in/vendor/composer/autoload_real.php:71
+Stack trace:
+#0 /home/simplib1/admin.simplibook.in/vendor/composer/autoload_real.php(61): composerRequired7a72e0db4e63a3f9cc387d249c54bdb()
+#1 /home/simplib1/admin.simplibook.in/vendor/autoload.php(7): ComposerAutoloaderInitd7a72e0db4e63a3f9cc387d249c54bdb::getLoader()
+#2 /home/simplib1/admin.simplibook.in/index.php(34): require('/home/simplib1/...')
+#3 {main}
+  thrown in /home/simplib1/admin.simplibook.in/vendor/composer/autoload_real.php on line 71
