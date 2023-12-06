@@ -5,15 +5,18 @@ namespace Modules\ProviderManagement\Http\Controllers\Api\V1\Provider;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Modules\ProviderManagement\Entities\Provider;
 use Modules\ProviderManagement\Entities\WithdrawRequest;
 use Modules\TransactionModule\Entities\Transaction;
 use Modules\TransactionModule\Entities\WithdrawalMethod;
 use Modules\UserManagement\Entities\User;
+use Modules\ProviderManagement\Traits\WithdrawTrait;
 
 class WithdrawController extends Controller
 {
+    use WithdrawTrait;
     protected User $user;
     protected Provider $provider;
     protected WithdrawRequest $withdraw_request;
@@ -90,23 +93,70 @@ class WithdrawController extends Controller
         }
 
         $provider_user = $this->user->with(['account'])->find($request->user()->id);
+        $account = $provider_user->account;
+        $receivable = $account->account_receivable;
+        $payable = $account->account_payable;
+        $provider_info = $provider_user->provider;
 
-        if($request['amount'] > $provider_user->account->account_receivable) {
-            return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 200);
+        if ($receivable > $payable && $payable != 0) {
+
+            $totalReceivable = $receivable - $payable ?? 0;
+
+            if ($request['amount'] > $totalReceivable) {
+                return response()->json(response_formatter(DEFAULT_400), 200);
+            }
+
+
+            if($provider_info){
+                $provider_info->is_suspended = 0;
+                $provider_info->save();
+            }
+
+
+        } elseif ($receivable > $payable && $payable == 0) {
+
+            $totalReceivable = $receivable - $payable ?? 0;
+
+            if ($request['amount'] > $totalReceivable) {
+                return response()->json(response_formatter(DEFAULT_400), 200);
+            }
+
         }
 
-        withdraw_request_transaction($request->user()->id, $request['amount']);
+        //min max check
+        $withdraw_request_amount = [
+            'minimum' => (float)(business_config('minimum_withdraw_amount', 'business_information'))->live_values ?? null,
+            'maximum' => (float)(business_config('maximum_withdraw_amount', 'business_information'))->live_values ?? null,
+        ];
 
-        $this->withdraw_request->create([
-            'user_id' => $request->user()->id,
-            'request_updated_by' => $request->user()->id,
-            'amount' => $request['amount'],
-            'request_status' => 'pending',
-            'is_paid' => 0,
-            'note' => $request['note'],
-            'withdrawal_method_id' => $request['withdrawal_method_id'],
-            'withdrawal_method_fields' => $values,
-        ]);
+        if($account->account_receivable < $request['amount'] || $request['amount'] < $withdraw_request_amount['minimum'] || $request['amount'] > $withdraw_request_amount['maximum']) {
+            return response()->json(response_formatter(DEFAULT_400), 200);
+        }
+
+
+        DB::transaction(function () use ($account, $request, $payable, $values) {
+            withdraw_request_transaction($request->user()->id, $request['amount']);
+
+            //admin payment transaction
+            if ($payable > 0){
+                $provider = Provider::where('user_id', $request->user()->id)->first();
+
+                //adjust
+                withdraw_request_accept_for_adjust_transaction($request->user()->id, $payable);
+                collect_cash_transaction($provider->id, $payable);
+            }
+
+            $this->withdraw_request->create([
+                'user_id' => $request->user()->id,
+                'request_updated_by' => $request->user()->id,
+                'amount' => $request['amount'],
+                'request_status' => 'pending',
+                'is_paid' => 0,
+                'note' => $request['note'],
+                'withdrawal_method_id' => $request['withdrawal_method_id'],
+                'withdrawal_method_fields' => $values,
+            ]);
+        });
 
         return response()->json(response_formatter(DEFAULT_200), 200);
     }

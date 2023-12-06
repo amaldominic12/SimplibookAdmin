@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Modules\BookingModule\Entities\Booking;
-use Modules\BookingModule\Events\BookingRequested;
 use Modules\ReviewModule\Entities\Review;
 use Modules\UserManagement\Entities\Serviceman;
 use Modules\UserManagement\Entities\User;
@@ -20,6 +20,7 @@ class Provider extends Model
 {
     use HasFactory;
     use HasUuid;
+    use SoftDeletes;
 
     protected $casts = [
         'order_count' => 'integer',

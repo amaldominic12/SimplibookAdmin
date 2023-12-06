@@ -113,10 +113,12 @@
                         <div class="card recent-transactions h-100">
                             <div class="card-body">
                                 <h4 class="mb-3">{{translate('recent_transactions')}}</h4>
-                                <div class="d-flex align-items-center gap-3 mb-4">
-                                    <img src="{{asset('public/assets/admin-module')}}/img/icons/arrow-up.png" alt="">
-                                    <p class="opacity-75">{{$data[2]['this_month_trx_count']}} {{translate('transactions_this_month')}}</p>
-                                </div>
+                                @if(isset($data[2]['recent_transactions']) && count($data[2]['recent_transactions']) > 0)
+                                    <div class="d-flex align-items-center gap-3 mb-4">
+                                        <img src="{{asset('public/assets/admin-module')}}/img/icons/arrow-up.png" alt="">
+                                        <p class="opacity-75">{{$data[2]['this_month_trx_count']}} {{translate('transactions_this_month')}}</p>
+                                    </div>
+                                @endif
                                 <div class="events">
                                     @foreach($data[2]['recent_transactions'] as $transaction)
                                         <div class="event">
@@ -163,7 +165,7 @@
                                                         <span class="material-icons">star</span>
                                                         {{$provider->avg_rating}}
                                                     </span>
-{{--                                                    <span class="common-list_success-rate">{{translate('success_rate')}} {{divnum($provider->reviews->sum('review_rating'),$provider->reviews_count)/100}}%</span>--}}
+                                                    {{--<span class="common-list_success-rate">{{translate('success_rate')}} {{divnum($provider->reviews->sum('review_rating'),$provider->reviews_count)/100}}%</span>--}}
                                                 </div>
                                             </div>
                                         </li>

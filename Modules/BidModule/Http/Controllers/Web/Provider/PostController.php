@@ -38,7 +38,7 @@ class PostController extends Controller
      * @return RedirectResponse|Renderable
      * @throws ValidationException
      */
-    public function index(Request $request)
+    public function index(Request $request): Renderable|RedirectResponse
     {
         Validator::make($request->all(), [
             'type' => 'required|in:all,new_booking_request,placed_offer'
@@ -69,9 +69,24 @@ class PostController extends Controller
                 });
             })
             ->when($request['type'] != 'all' && $request['type'] == 'new_booking_request', function ($query) use ($request) {
-                $query->whereDoesntHave('bids', function ($query) use ($request) {
-                    $query->where('provider_id', $request->user()->provider->id);
-                });
+                if (!$request->user()->provider->is_suspended || !business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values) {
+                    $query->whereDoesntHave('bids', function ($query) use ($request) {
+                        $query->where('provider_id', $request->user()->provider->id);
+                    });
+                } else {
+                    $query->whereNull('id');
+                }
+            })
+            ->when($request['type'] == 'all', function ($query) use ($request) {
+                if ($request->user()->provider->is_suspended && business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values) {
+                    $query->whereHas('bids', function ($query) use ($request) {
+                        if ($request['type'] == 'placed_offer') {
+                            $query->where('status', 'pending')->where('provider_id', $request->user()->provider->id);
+                        } else if ($request['type'] == 'booking_placed') {
+                            $query->where('status', 'accepted');
+                        }
+                    });
+                }
             })
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search']);
@@ -88,7 +103,7 @@ class PostController extends Controller
             ->appends($query_param);
 
         if ($request['type'] == 'all') {
-            foreach ($posts as $key=>$post) {
+            foreach ($posts as $key => $post) {
                 if ($post->bids) {
                     foreach ($post->bids as $bid) {
                         if ($bid->status == 'denied') unset($posts[$key]);
@@ -101,12 +116,12 @@ class PostController extends Controller
         $coordinates = auth()->user()->provider->coordinates ?? null;
         foreach ($posts as $post) {
             $distance = null;
-            if(!is_null($coordinates) && $post->service_address) {
+            if (!is_null($coordinates) && $post->service_address) {
                 $distance = get_distance(
-                    [$coordinates['latitude']??null, $coordinates['longitude']??null],
+                    [$coordinates['latitude'] ?? null, $coordinates['longitude'] ?? null],
                     [$post->service_address?->lat, $post->service_address?->lon]
                 );
-                $distance = ($distance) ? number_format($distance, 2) .' km' : null;
+                $distance = ($distance) ? number_format($distance, 2) . ' km' : null;
             }
             $post->distance = $distance;
         }
@@ -169,12 +184,12 @@ class PostController extends Controller
         //find distance
         $coordinates = auth()->user()->provider->coordinates ?? null;
         $distance = null;
-        if(!is_null($coordinates) && $post->service_address) {
+        if (!is_null($coordinates) && $post->service_address) {
             $distance = get_distance(
-                [$coordinates['latitude']??null, $coordinates['longitude']??null],
+                [$coordinates['latitude'] ?? null, $coordinates['longitude'] ?? null],
                 [$post->service_address?->lat, $post->service_address?->lon]
             );
-            $distance = ($distance) ? number_format($distance, 2) .' km' : null;
+            $distance = ($distance) ? number_format($distance, 2) . ' km' : null;
         }
 
         if (!isset($post)) {

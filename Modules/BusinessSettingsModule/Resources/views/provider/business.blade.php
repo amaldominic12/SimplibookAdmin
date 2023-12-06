@@ -35,7 +35,7 @@
                                                 >info</i>
                                             </div>
                                             <label class="switcher">
-                                                @php($value = $data_values->where('key_name', $service_man_booking_cancel[0]['key'])?->first()?->live_values ?? null)
+                                                @php($value = $data_values->where('key_name', $service_man_booking_cancel[0]['key'])->where('settings_type', 'serviceman_config')->where('provider_id', $provider_id)?->first()?->live_values ?? null)
                                                 <input class="switcher_input" id="{{$service_man_booking_cancel[0]['key']}}" type="checkbox" name="{{$service_man_booking_cancel[0]['key']}}"
                                                         value="1" {{$value ? 'checked' : ''}}
                                                         onclick="switch_alert('{{$service_man_booking_cancel[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($service_man_booking_cancel[0]['key']))}}')"
@@ -54,7 +54,7 @@
                                                 >info</i>
                                             </div>
                                             <label class="switcher">
-                                                @php($value = $data_values->where('key_name', $service_man_booking_edit[0]['key'])?->first()?->live_values ?? null)
+                                                @php($value = $data_values->where('key_name', $service_man_booking_edit[0]['key'])->where('settings_type', 'serviceman_config')->where('provider_id', $provider_id)?->first()?->live_values ?? null)
                                                 <input class="switcher_input" id="{{$service_man_booking_edit[0]['key']}}" type="checkbox" name="{{$service_man_booking_edit[0]['key']}}"
                                                         value="1" {{$value ? 'checked' : ''}}
                                                         onclick="switch_alert('{{$service_man_booking_edit[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($service_man_booking_edit[0]['key']))}}')"

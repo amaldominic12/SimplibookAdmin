@@ -72,23 +72,27 @@ class ChannelConversation extends Model
                         $user_phone = $user->provider->company_phone;
                         $user_image = asset('storage/app/public/provider/logo') . '/' . $user->provider->logo;
                         $user_type = USER_TYPES[2]['value'];
+
                     } else if ($user->user_type == USER_TYPES[3]['value']) {
                         //if serviceman
                         $user_name = $user->first_name. ' ' . $user->last_name;
                         $user_phone = $user->phone;
                         $user_image = asset('storage/app/public/serviceman/profile') . '/'  . $user->profile_image;
                         $user_type = USER_TYPES[3]['value'];
+
                     } else if ($user->user_type == USER_TYPES[4]['value']) {
                         //if customer
                         $user_name = $user->first_name. ' ' . $user->last_name;
                         $user_phone = $user->phone;
                         $user_image = asset('storage/app/public/user/profile_image') . '/'  . $user->profile_image;
                         $user_type = USER_TYPES[4]['value'];
+
                     } else {
                         return;
                     }
 
                     //send notification
+
                     device_notification_for_chatting(
                         $to_user->fcm_token,
                         translate('New message has been arrived'),

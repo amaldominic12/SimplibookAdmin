@@ -2,6 +2,8 @@
 
 namespace Modules\ProviderManagement\Http\Controllers\Api\V1\Provider;
 
+use Brian2694\Toastr\Facades\Toastr;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -28,8 +30,9 @@ class ProviderController extends Controller
     private $subscribedService;
     private Booking $booking;
     private Review $review;
+    protected Transaction $transaction;
 
-    public function __construct(SubscribedService $subscribedService, BankDetail $bankDetail, Provider $provider, Account $account, User $user, PushNotification $pushNotification, Serviceman $serviceman, Booking $booking, Review $review)
+    public function __construct(Transaction $transaction, SubscribedService $subscribedService, BankDetail $bankDetail, Provider $provider, Account $account, User $user, PushNotification $pushNotification, Serviceman $serviceman, Booking $booking, Review $review)
     {
         $this->bankDetail = $bankDetail;
         $this->provider = $provider;
@@ -41,6 +44,7 @@ class ProviderController extends Controller
         $this->google_map = business_config('google_map', 'third_party');
         $this->booking = $booking;
         $this->review = $review;
+        $this->transaction = $transaction;
     }
 
     /**
@@ -126,7 +130,7 @@ class ProviderController extends Controller
 
             }])->where('booking_status', 'pending')
                 ->whereIn('sub_category_id', $subscribed_sub_categories)
-                ->when($max_booking_amount > 0, function($query) use ($max_booking_amount) {
+                ->when($max_booking_amount > 0, function ($query) use ($max_booking_amount) {
                     $query->where(function ($query) use ($max_booking_amount) {
                         $query->where('payment_method', 'cash_after_service')
                             ->where(function ($query) use ($max_booking_amount) {
@@ -137,6 +141,8 @@ class ProviderController extends Controller
                     });
                 })
                 ->latest()->take(5)->get();
+            $recent_not_booking = [];
+            $recent_bookings = $request->user()?->provider?->is_suspended == 0 || !business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values ? $recent_bookings : $recent_not_booking;
             $data[] = ['recent_bookings' => $recent_bookings];
         }
 
@@ -192,6 +198,30 @@ class ProviderController extends Controller
         $bank_details = $this->bankDetail->where('provider_id', $request->user()->provider->id)->first();
 
         return response()->json(response_formatter(DEFAULT_200, $bank_details), 200);
+    }
+
+    /**
+     * Display a listing of the resource.
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function delete_provider(Request $request): JsonResponse
+    {
+        $provider = $this->provider::where('user_id', $request->user()->id)->first();
+        if ($provider) {
+
+            // Disable is_active for associated servicemen users
+            $provider->servicemen->each(function ($serviceman) {
+                $serviceman_user = $serviceman->user;
+                $serviceman_user->is_active = 0;
+                $serviceman_user->save();
+            });
+
+            $provider->delete();
+            $provider->owner->delete();
+            return response()->json(response_formatter(DEFAULT_DELETE_200), 200);
+        }
+        return response()->json(response_formatter(DEFAULT_404), 200);
     }
 
     /**
@@ -538,6 +568,65 @@ class ProviderController extends Controller
         }
 
         return response()->json(response_formatter(DEFAULT_404), 200);
+    }
+
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function change_language(Request $request): JsonResponse
+    {
+        if (auth('api')->user()) {
+            $customer = $this->user::find(auth('api')->user()->id);
+            $customer->current_language_key = $request->header('X-localization') ?? 'en';
+            $customer->save();
+            return response()->json(response_formatter(DEFAULT_200), 200);
+        }
+        return response()->json(response_formatter(DEFAULT_404), 200);
+    }
+
+    public function adjust(Request $request): JsonResponse
+    {
+        $provider = Provider::where('user_id', $request->user()->id)->first();
+        $account = $this->account->where('user_id', $request->user()->id)->first();
+        $receivable = $account->account_receivable;
+        $payable = $account->account_payable;
+
+        if ($receivable == $payable){
+
+            withdraw_request_accept_for_adjust_transaction($request->user()->id, $receivable);
+            collect_cash_transaction($provider->id, $payable);
+
+            return response()->json(response_formatter(ADJUST_AMOUNT_SUCCESS_200), 200);
+        }
+
+        return response()->json(response_formatter(DEFAULT_404), 200);
+
+    }
+    public function transaction(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'transaction_type' => 'nullable|in:paid_commission,paid_amount,all',
+            'limit' => 'required|numeric|min:1|max:200',
+            'offset' => 'required|numeric|min:1|max:100000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        }
+        $filtered_transactions = $this->transaction
+            ->with(['booking', 'from_user.provider', 'to_user.provider'])
+            ->when($request->transaction_type !== 'all', function ($query) use ($request) {
+                return $query->where('trx_type', $request->transaction_type);
+            })
+            ->when($request->transaction_type === 'all', function ($query) {
+                return $query->whereIn('trx_type', ['paid_commission', 'paid_amount']);
+            })
+            ->latest()
+            ->paginate($request['limit'], ['*'], 'offset', $request['offset'])->withPath('');
+
+        return response()->json(response_formatter(DEFAULT_200, $filtered_transactions, 200));
     }
 
 }

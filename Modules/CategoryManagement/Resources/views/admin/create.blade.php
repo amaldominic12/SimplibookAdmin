@@ -20,17 +20,55 @@
                     <!-- Category Setup -->
                     <div class="card category-setup mb-30">
                         <div class="card-body p-30">
-                            <form action="{{route('admin.category.store')}}" method="post" enctype="multipart/form-data">
+                            <form action="{{route('admin.category.store')}}" method="post"
+                                  enctype="multipart/form-data">
                                 @csrf
+                                @php($language= Modules\BusinessSettingsModule\Entities\BusinessSettings::where('key_name','system_language')->first())
+                                @php($default_lang = str_replace('_', '-', app()->getLocale()))
+                                @if($language)
+                                    <ul class="nav nav--tabs border-color-primary mb-4">
+                                        <li class="nav-item">
+                                            <a class="nav-link lang_link active"
+                                               href="#"
+                                               id="default-link">{{translate('default')}}</a>
+                                        </li>
+                                        @foreach ($language?->live_values as $lang)
+                                            <li class="nav-item">
+                                                <a class="nav-link lang_link"
+                                                   href="#"
+                                                   id="{{ $lang['code'] }}-link">{{ get_language_name($lang['code']) }}</a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
                                 <div class="row">
                                     <div class="col-lg-8 mb-5 mb-lg-0">
                                         <div class="d-flex flex-column">
-                                            <div class="form-floating mb-30">
-                                                <input type="text" name="name" class="form-control"
-                                                       value="{{old('name')}}"
-                                                       placeholder="{{translate('category_name')}}" required>
-                                                <label>{{translate('category_name')}}</label>
-                                            </div>
+                                            @if ($language)
+                                                <div class="form-floating mb-30 lang-form" id="default-form">
+                                                    <input type="text" name="name[]" class="form-control"
+                                                           placeholder="{{translate('category_name')}}">
+                                                    <label>{{translate('category_name')}} ({{ translate('default') }})</label>
+                                                </div>
+                                                <input type="hidden" name="lang[]" value="default">
+                                                @foreach ($language?->live_values as $lang)
+                                                    <div class="form-floating mb-30 d-none lang-form" id="{{$lang['code']}}-form">
+                                                        <input type="text" name="name[]" class="form-control"
+                                                               placeholder="{{translate('category_name')}}"
+                                                               {{$lang['status'] == '1' ? 'required':''}}
+                                                               @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>
+                                                        <label>{{translate('category_name')}} ({{strtoupper($lang['code'])}})</label>
+                                                    </div>
+                                                    <input type="hidden" name="lang[]" value="{{$lang['code']}}">
+                                                @endforeach
+                                            @else
+                                                <div class="form-floating mb-30">
+                                                    <input type="text" name="name[]" class="form-control"
+                                                           placeholder="{{translate('category_name')}}" required>
+                                                    <label>{{translate('category_name')}}</label>
+                                                </div>
+                                                <input type="hidden" name="lang[]" value="default">
+                                            @endif
 
                                             <select class="select-zone theme-input-style w-100" name="zone_ids[]"
                                                     multiple="multiple">
@@ -49,7 +87,8 @@
                                                 <div class="upload-file">
                                                     <input type="file" class="upload-file__input" name="image">
                                                     <div class="upload-file__img">
-                                                        <img onerror="this.src='{{asset('public/assets/admin-module/img/media/upload-file.png')}}'"
+                                                        <img
+                                                            onerror="this.src='{{asset('public/assets/admin-module/img/media/upload-file.png')}}'"
                                                             src="{{asset('public/assets/admin-module')}}/img/media/upload-file.png"
                                                             alt="">
                                                     </div>
@@ -74,7 +113,8 @@
                     </div>
                     <!-- End Category Setup -->
 
-                    <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom mx-lg-4 mb-10 gap-3">
+                    <div
+                        class="d-flex flex-wrap justify-content-between align-items-center border-bottom mx-lg-4 mb-10 gap-3">
                         <ul class="nav nav--tabs">
                             <li class="nav-item">
                                 <a class="nav-link {{$status=='all'?'active':''}}"
@@ -107,7 +147,8 @@
                             <div class="card">
                                 <div class="card-body">
                                     <div class="data-table-top d-flex flex-wrap gap-10 justify-content-between">
-                                        <form action="{{url()->current()}}?status={{$status}}" class="search-form search-form_style-two"
+                                        <form action="{{url()->current()}}?status={{$status}}"
+                                              class="search-form search-form_style-two"
                                               method="POST">
                                             @csrf
                                             <div class="input-group search-form__input_group">
@@ -118,7 +159,8 @@
                                                        value="{{$search}}" name="search"
                                                        placeholder="{{translate('search_here')}}">
                                             </div>
-                                            <button type="submit" class="btn btn--primary">{{translate('search')}}</button>
+                                            <button type="submit"
+                                                    class="btn btn--primary">{{translate('search')}}</button>
                                         </form>
 
                                         <div class="d-flex flex-wrap align-items-center gap-3">
@@ -129,7 +171,9 @@
                                                     <span class="material-icons">file_download</span> download
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                                                    <li><a class="dropdown-item" href="{{route('admin.category.download')}}?search={{$search}}">{{translate('excel')}}</a></li>
+                                                    <li><a class="dropdown-item"
+                                                           href="{{route('admin.category.download')}}?search={{$search}}">{{translate('excel')}}</a>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -158,14 +202,16 @@
                                                     <td>
                                                         <label class="switcher" data-bs-toggle="modal"
                                                                data-bs-target="#deactivateAlertModal">
-                                                            <input class="switcher_input" onclick="route_alert('{{route('admin.category.status-update',[$category->id])}}','{{translate('want_to_update_status')}}')"
+                                                            <input class="switcher_input"
+                                                                   onclick="route_alert('{{route('admin.category.status-update',[$category->id])}}','{{translate('want_to_update_status')}}')"
                                                                    type="checkbox" {{$category->is_active?'checked':''}}>
                                                             <span class="switcher_control"></span>
                                                         </label>
                                                     </td>
                                                     <td>
                                                         <label class="switcher">
-                                                            <input class="switcher_input" onclick="route_alert('{{route('admin.category.featured-update',[$category->id])}}','{{translate('want_to_update_status')}}')"
+                                                            <input class="switcher_input"
+                                                                   onclick="route_alert('{{route('admin.category.featured-update',[$category->id])}}','{{translate('want_to_update_status')}}')"
                                                                    type="checkbox" {{$category->is_featured?'checked':''}}>
                                                             <span class="switcher_control"></span>
                                                         </label>
@@ -178,13 +224,15 @@
                                                             </a>
                                                             <button type="button"
                                                                     @if(env('APP_ENV')!='demo')
-                                                                    onclick="form_alert('delete-{{$category->id}}','{{translate('want_to_delete_this_category')}}?')"
+                                                                        onclick="form_alert('delete-{{$category->id}}','{{translate('want_to_delete_this_category')}}?')"
                                                                     @endif
                                                                     class="table-actions_delete bg-transparent border-0 p-0 demo_check">
                                                                 <span class="material-icons">delete</span>
                                                             </button>
-                                                            <form action="{{route('admin.category.delete',[$category->id])}}"
-                                                                  method="post" id="delete-{{$category->id}}" class="hidden">
+                                                            <form
+                                                                action="{{route('admin.category.delete',[$category->id])}}"
+                                                                method="post" id="delete-{{$category->id}}"
+                                                                class="hidden">
                                                                 @csrf
                                                                 @method('DELETE')
                                                             </form>
@@ -217,4 +265,28 @@
     </script>
     <script src="{{asset('public/assets/admin-module')}}/plugins/dataTables/jquery.dataTables.min.js"></script>
     <script src="{{asset('public/assets/admin-module')}}/plugins/dataTables/dataTables.select.min.js"></script>
+
+    <script>
+        $(".lang_link").on('click',function(e){
+            e.preventDefault();
+            $(".lang_link").removeClass('active');
+            $(".lang-form").addClass('d-none');
+            $(this).addClass('active');
+
+            let form_id = this.id;
+            let lang = form_id.substring(0, form_id.length - 5);
+            console.log(lang);
+            $("#"+lang+"-form").removeClass('d-none');
+
+            if(lang == '{{$default_lang}}')
+            {
+                $(".from_part_2").removeClass('d-none');
+            }
+            else
+            {
+                $(".from_part_2").addClass('d-none');
+            }
+        });
+    </script>
+
 @endpush

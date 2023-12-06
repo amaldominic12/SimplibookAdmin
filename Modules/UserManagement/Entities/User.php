@@ -19,6 +19,7 @@ use Modules\ServiceManagement\Entities\VisitedService;
 use Modules\TransactionModule\Entities\Account;
 use Modules\TransactionModule\Entities\Transaction;
 use Modules\ZoneManagement\Entities\Zone;
+use Laravel\Passport\Token;
 
 class User extends Authenticatable
 {
@@ -144,7 +145,13 @@ class User extends Authenticatable
         });
 
         self::updated(function ($model) {
-            // ... code here
+            if ($model->isDirty('is_active')) {
+                if ($model->is_active == 0){
+                    $model->tokens->each(function ($token, $key) {
+                        $token->revoke();
+                    });
+                }
+            }
         });
 
         self::deleting(function ($model) {

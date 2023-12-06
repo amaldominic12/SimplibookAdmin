@@ -30,7 +30,7 @@
                             <li class="nav-item">
                                 <a href="{{url()->current()}}?web_page=business_setup"
                                    class="nav-link {{$web_page=='business_setup'?'active':''}}">
-                                    {{translate('business_Information_Setup')}}
+                                    {{translate('Business info')}}
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -39,16 +39,10 @@
                                     {{translate('General_Setup')}}
                                 </a>
                             </li>
-                            {{-- <li class="nav-item">
-                                <a href="{{url()->current()}}?web_page=bidding_system"
-                                   class="nav-link {{$web_page=='bidding_system'?'active':''}}">
-                                    {{translate('bidding_system')}}
-                                </a>
-                            </li> --}}
                             <li class="nav-item">
                                 <a href="{{url()->current()}}?web_page=promotional_setup"
                                    class="nav-link {{$web_page=='promotional_setup'?'active':''}}">
-                                    {{translate('promotional_Setup')}}
+                                    {{translate('Promotions')}}
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -117,7 +111,8 @@
                                                                        oninput="this.value = this.value.replace(/[^+\d]+$/g, '').replace(/(\..*)\./g, '$1');"
                                                                        value="{{$data_values->where('key_name','business_phone')->first()->live_values}}">
                                                                 <label>{{translate('business_phone')}} *</label>
-                                                                <small class="d-block mt-1 text-danger">* ( {{translate('Country_Code_Required')}} )</small>
+                                                                <small class="d-block mt-1 text-danger">*
+                                                                    ( {{translate('Country_Code_Required')}} )</small>
                                                             </div>
                                                         </div>
                                                         <div class="mb-30">
@@ -142,12 +137,16 @@
                                                     <div class="col-md-6">
                                                         <div class="row">
                                                             <div class="col-md-6">
-                                                                <div class="mb-30 d-flex flex-column align-items-center gap-2">
+                                                                <div
+                                                                    class="mb-30 d-flex flex-column align-items-center gap-2">
                                                                     <p class="title-color">{{translate('favicon')}}</p>
                                                                     <div class="upload-file mb-30">
-                                                                        <input type="file" class="upload-file__input" name="business_favicon">
+                                                                        <input type="file" class="upload-file__input"
+                                                                               name="business_favicon">
                                                                         <div class="upload-file__img">
-                                                                            <img onerror="this.src='{{asset('public/assets/admin-module/img/media/upload-file.png')}}'" src="{{asset('storage/app/public/business')}}/{{$data_values->where('key_name','business_favicon')->first()->live_values}}"
+                                                                            <img
+                                                                                onerror="this.src='{{asset('public/assets/admin-module/img/media/upload-file.png')}}'"
+                                                                                src="{{asset('storage/app/public/business')}}/{{$data_values->where('key_name','business_favicon')->first()->live_values}}"
                                                                                 alt="">
                                                                         </div>
                                                                         <span class="upload-file__edit">
@@ -160,14 +159,17 @@
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-6">
-                                                                <div class="mb-30 d-flex flex-column align-items-center gap-2">
+                                                                <div
+                                                                    class="mb-30 d-flex flex-column align-items-center gap-2">
                                                                     <p class="title-color">{{translate('logo')}}</p>
                                                                     <div class="upload-file mb-30 max-w-100">
                                                                         <input type="file"
-                                                                                class="upload-file__input"
-                                                                                name="business_logo">
-                                                                        <div class="upload-file__img upload-file__img_banner ratio-none">
-                                                                            <img onerror="this.src='{{asset('public/assets/admin-module/img/media/banner-upload-file.png')}}'"
+                                                                               class="upload-file__input"
+                                                                               name="business_logo">
+                                                                        <div
+                                                                            class="upload-file__img upload-file__img_banner ratio-none">
+                                                                            <img
+                                                                                onerror="this.src='{{asset('public/assets/admin-module/img/media/banner-upload-file.png')}}'"
                                                                                 src="{{asset('storage/app/public/business')}}/{{$data_values->where('key_name','business_logo')->first()->live_values}}"
                                                                                 alt="">
                                                                         </div>
@@ -186,7 +188,8 @@
                                                         @php($country_code=$data_values->where('key_name','country_code')->first()->live_values)
                                                         <select class="js-select theme-input-style w-100"
                                                                 name="country_code">
-                                                            <option value="0" selected disabled>{{translate('---Select_Country---')}}</option>
+                                                            <option value="0" selected
+                                                                    disabled>{{translate('---Select_Country---')}}</option>
                                                             @foreach(COUNTRIES as $country)
                                                                 <option
                                                                     value="{{$country['code']}}" {{$country_code==$country['code']?'selected':''}}>
@@ -199,7 +202,8 @@
                                                         @php($currency_code=$data_values->where('key_name','currency_code')->first()->live_values)
                                                         <select class="js-select theme-input-style w-100"
                                                                 name="currency_code">
-                                                            <option value="0" selected disabled>{{translate('---Select_Currency---')}}</option>
+                                                            <option value="0" selected
+                                                                    disabled>{{translate('---Select_Currency---')}}</option>
                                                             @foreach(CURRENCIES as $currency)
                                                                 <option
                                                                     value="{{$currency['code']}}" {{$currency_code==$currency['code']?'selected':''}}>
@@ -212,7 +216,8 @@
                                                         @php($position=$data_values->where('key_name','currency_symbol_position')->first()->live_values)
                                                         <select class="js-select theme-input-style w-100"
                                                                 name="currency_symbol_position">
-                                                            <option value="0" selected disabled>{{translate('---Select_Corrency_Symbol_Position---')}}</option>
+                                                            <option value="0" selected
+                                                                    disabled>{{translate('---Select_Corrency_Symbol_Position---')}}</option>
                                                             <option value="right" {{$position=='right'?'selected':''}}>
                                                                 {{translate('right')}}
                                                             </option>
@@ -288,7 +293,8 @@
                                                         @php($time_zone=$data_values->where('key_name','time_zone')->first()->live_values)
                                                         <select class="js-select theme-input-style w-100"
                                                                 name="time_zone">
-                                                            <option value="0" selected disabled>{{translate('---Select_Time_Zone---')}}</option>
+                                                            <option value="0" selected
+                                                                    disabled>{{translate('---Select_Time_Zone---')}}</option>
                                                             @foreach(TIME_ZONES as $time)
                                                                 <option
                                                                     value="{{$time['tzCode']}}" {{$time_zone==$time['tzCode']?'selected':''}}>
@@ -298,14 +304,30 @@
                                                         </select>
                                                     </div>
 
+                                                    <div class="col-md-6 col-12 mb-30 mt-4">
+                                                        @php($time_format=$data_values->where('key_name','time_format')->first()->live_values ?? '24h')
+                                                        <select class="js-select theme-input-style w-100"
+                                                                name="time_format">
+                                                            <option
+                                                                value="12" {{$time_format=='12h'?'selected':''}}>{{translate('12_hour')}}</option>
+                                                            <option
+                                                                value="24" {{$time_format=='24h'?'selected':''}}>{{translate('24_hour')}}</option>
+                                                        </select>
+                                                    </div>
+
                                                     <!-- Forgot Password Verification Method -->
                                                     <div class="col-md-6 col-12 mb-30">
-                                                        <div class="mb-2">{{translate('Forgot Password Verification Method')}}</div>
+                                                        <div
+                                                            class="mb-2">{{translate('Forgot Password Verification Method')}}</div>
                                                         @php($method = $data_values->where('key_name','forget_password_verification_method')->first()?->live_values)
-                                                        <select class="js-select theme-input-style w-100" name="forget_password_verification_method">
-                                                            <option value="" selected disabled>{{translate('---Select_Method---')}}</option>
-                                                            <option value="email" {{$method=='email'?'selected':''}}>{{translate('email')}}</option>
-                                                            <option value="phone" {{$method=='phone'?'selected':''}}>{{translate('phone')}}</option>
+                                                        <select class="js-select theme-input-style w-100"
+                                                                name="forget_password_verification_method">
+                                                            <option value="" selected
+                                                                    disabled>{{translate('---Select_Method---')}}</option>
+                                                            <option
+                                                                value="email" {{$method=='email'?'selected':''}}>{{translate('email')}}</option>
+                                                            <option
+                                                                value="phone" {{$method=='phone'?'selected':''}}>{{translate('phone')}}</option>
                                                         </select>
                                                     </div>
 
@@ -313,14 +335,18 @@
                                                     <div class="col-md-6 col-12 mb-30 gap-3">
                                                         @php($value=$data_values->where('key_name','phone_number_visibility_for_chatting')->first()->live_values??null)
                                                         <div class="border p-3 rounded d-flex justify-content-between">
-                                                            <div class="d-flex align-items-center gap-2">{{translate('Phone number visibility for chatting')}}
-                                                                <i class="material-icons" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                            <div
+                                                                class="d-flex align-items-center gap-2">{{translate('Phone number visibility for chatting')}}
+                                                                <i class="material-icons" data-bs-toggle="tooltip"
+                                                                   data-bs-placement="top"
                                                                    title="{{translate('Customers or providers can not see each other phone numbers during chatting')}}"
                                                                 >info</i>
                                                             </div>
                                                             <label class="switcher">
-                                                                <input class="switcher_input" type="checkbox" name="phone_number_visibility_for_chatting" value="1"
-                                                                       {{isset($value) && $value == '1' ? 'checked' : ''}}>
+                                                                <input class="switcher_input" type="checkbox"
+                                                                       name="phone_number_visibility_for_chatting"
+                                                                       value="1"
+                                                                    {{isset($value) && $value == '1' ? 'checked' : ''}}>
                                                                 <span class="switcher_control"></span>
                                                             </label>
                                                         </div>
@@ -328,14 +354,17 @@
                                                     <div class="col-md-6 col-12 mb-30 gap-3">
                                                         @php($value=$data_values->where('key_name','direct_provider_booking')->first()->live_values??null)
                                                         <div class="border p-3 rounded d-flex justify-content-between">
-                                                            <div class="d-flex align-items-center gap-2">{{translate('Direct Provider Booking')}}
-                                                                <i class="material-icons" data-bs-toggle="tooltip" data-bs-placement="top"
+                                                            <div
+                                                                class="d-flex align-items-center gap-2">{{translate('Direct Provider Booking')}}
+                                                                <i class="material-icons" data-bs-toggle="tooltip"
+                                                                   data-bs-placement="top"
                                                                    title="{{translate('Customers can directly book any provider')}}"
                                                                 >info</i>
                                                             </div>
                                                             <label class="switcher">
-                                                                <input class="switcher_input" type="checkbox" name="direct_provider_booking" value="1"
-                                                                       {{isset($value) && $value == '1' ? 'checked' : ''}}>
+                                                                <input class="switcher_input" type="checkbox"
+                                                                       name="direct_provider_booking" value="1"
+                                                                    {{isset($value) && $value == '1' ? 'checked' : ''}}>
                                                                 <span class="switcher_control"></span>
                                                             </label>
                                                         </div>
@@ -352,9 +381,10 @@
                                                     </div>
                                                     <div class="col-12 mb-30">
                                                         <div class="form-floating">
-                                                            <textarea type="text" class="form-control" name="cookies_text"
-                                                                   placeholder="{{translate('ex:_al_right_reserved')}} *"
-                                                                   required>{{$data_values->where('key_name','cookies_text')->first()->live_values??null}}</textarea>
+                                                            <textarea type="text" class="form-control"
+                                                                      name="cookies_text"
+                                                                      placeholder="{{translate('ex:_al_right_reserved')}} *"
+                                                                      required>{{$data_values->where('key_name','cookies_text')->first()->live_values??null}}</textarea>
                                                             <label>{{translate('cookies_text')}} *</label>
                                                         </div>
                                                     </div>
@@ -382,33 +412,39 @@
                                  id="business-info">
                                 <div class="card">
                                     <div class="card-body p-30">
-                                        <form action="{{route('admin.business-settings.set-service-setup')}}" method="POST">
+                                        <form action="{{route('admin.business-settings.set-service-setup')}}"
+                                              method="POST">
                                             @csrf
                                             @method('put')
                                             <div class="row">
-                                                <?php
-                                                    $email_verifications = collect([ ['key' => 'email_verification','info_message' => 'During registration & Login Customers have to verify via email', 'title' => 'Email Verification'] ]);
-                                                    $phone_verifications = collect([ ['key'=>'phone_verification', 'title' => 'Phone Verifiaction', 'info_message' => 'During registration & Login Customers have to verify via phone'] ]);
-                                                    $cash_after_services = collect([ ['key' => 'cash_after_service','info_message' => 'Customer can pay with cash after receiving the service', 'title' => 'Cash After Service'] ]);
-                                                    $digital_payments = collect([ ['key' => 'digital_payment','info_message' => 'Customer can pay with digital payments', 'title' => 'Digital Payment'] ]);
-                                                    $partials_payments = collect([ ['key'=>'partial_payment', 'title' => 'Partial Payment', 'info_message' => 'Customer can pay partially with their wallet balance'] ]);
-                                                    $partials_payment_combinators = collect([ ['key'=>'partial_payment_combinator', 'title' => 'Can Combine Payment', 'info_message' => 'Admin can set how customers will make the partial payment by clicking on the preferred radio button. This section will be hidden if Partial Payment feature is disabled'] ]);
-                                                    $offline_payments = collect([ ['key'=>'offline_payment', 'title' => 'Offline Payment', 'info_message' => 'Offline Payment allows customers to use external payment methods. After payment, they need to use the transaction details while placing bookings. Admin can set if customers can make offline payments or not by enabling/disabling this button'] ]);
-                                                    $guest_checkouts = collect([ ['key'=>'guest_checkout', 'title' => 'Guest Checkout', 'info_message' => 'Admin can off guest checkout'] ]);
-                                                ?>
+                                                    <?php
+                                                    $email_verifications = collect([['key' => 'email_verification', 'info_message' => 'During registration & Login Customers have to verify via email', 'title' => 'Email Verification']]);
+                                                    $phone_verifications = collect([['key' => 'phone_verification', 'title' => 'Phone Verifiaction', 'info_message' => 'During registration & Login Customers have to verify via phone']]);
+                                                    $cash_after_services = collect([['key' => 'cash_after_service', 'info_message' => 'Customer can pay with cash after receiving the service', 'title' => 'Cash After Service']]);
+                                                    $digital_payments = collect([['key' => 'digital_payment', 'info_message' => 'Customer can pay with digital payments', 'title' => 'Digital Payment']]);
+                                                    $partials_payments = collect([['key' => 'partial_payment', 'title' => 'Partial Payment', 'info_message' => 'Customer can pay partially with their wallet balance']]);
+                                                    $partials_payment_combinators = collect([['key' => 'partial_payment_combinator', 'title' => 'Can Combine Payment', 'info_message' => 'Admin can set how customers will make the partial payment by clicking on the preferred radio button. This section will be hidden if Partial Payment feature is disabled']]);
+                                                    $offline_payments = collect([['key' => 'offline_payment', 'title' => 'Offline Payment', 'info_message' => 'Offline Payment allows customers to use external payment methods. After payment, they need to use the transaction details while placing bookings. Admin can set if customers can make offline payments or not by enabling/disabling this button']]);
+                                                    $guest_checkouts = collect([['key' => 'guest_checkout', 'title' => 'Guest Checkout', 'info_message' => 'Admin can off guest checkout']]);
+                                                    ?>
                                                 <div class="col-md-6 col-12 mb-30">
                                                     <div class="border p-3 rounded d-flex justify-content-between">
                                                         <div>
-                                                            <span class="text-capitalize">{{translate($email_verifications[0]['title'])}}</span>
-                                                            <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                title="{{translate($email_verifications[0]['info_message'] ?? '')}}"
+                                                            <span
+                                                                class="text-capitalize">{{translate($email_verifications[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($email_verifications[0]['info_message'] ?? '')}}"
                                                             >info</i>
                                                         </div>
                                                         <label class="switcher">
                                                             @php($value = $data_values->where('key_name', $email_verifications[0]['key'])?->first()?->live_values ?? null)
-                                                            <input class="switcher_input" id="{{$email_verifications[0]['key']}}" type="checkbox" name="{{$email_verifications[0]['key']}}"
-                                                                    value="1" {{$value ? 'checked' : ''}}
-                                                                    onclick="switch_alert('{{$email_verifications[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($email_verifications[0]['key']))}}')"
+                                                            <input class="switcher_input"
+                                                                   id="{{$email_verifications[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$email_verifications[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$email_verifications[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($email_verifications[0]['key']))}}')"
                                                             >
                                                             <span class="switcher_control"></span>
                                                         </label>
@@ -418,16 +454,21 @@
                                                 <div class="col-md-6 col-12 mb-30">
                                                     <div class="border p-3 rounded d-flex justify-content-between">
                                                         <div>
-                                                            <span class="text-capitalize">{{translate($phone_verifications[0]['title'])}}</span>
-                                                            <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                title="{{translate($phone_verifications[0]['info_message'] ?? '')}}"
+                                                            <span
+                                                                class="text-capitalize">{{translate($phone_verifications[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($phone_verifications[0]['info_message'] ?? '')}}"
                                                             >info</i>
                                                         </div>
                                                         <label class="switcher">
                                                             @php($value = $data_values->where('key_name', $phone_verifications[0]['key'])?->first()?->live_values ?? null)
-                                                            <input class="switcher_input" id="{{$phone_verifications[0]['key']}}" type="checkbox" name="{{$phone_verifications[0]['key']}}"
-                                                                    value="1" {{$value ? 'checked' : ''}}
-                                                                    onclick="switch_alert('{{$phone_verifications[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($phone_verifications[0]['key']))}}')"
+                                                            <input class="switcher_input"
+                                                                   id="{{$phone_verifications[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$phone_verifications[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$phone_verifications[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($phone_verifications[0]['key']))}}')"
                                                             >
                                                             <span class="switcher_control"></span>
                                                         </label>
@@ -437,16 +478,21 @@
                                                 <div class="col-md-6 col-12 mb-30">
                                                     <div class="border p-3 rounded d-flex justify-content-between">
                                                         <div>
-                                                            <span class="text-capitalize">{{translate($cash_after_services[0]['title'])}}</span>
-                                                            <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                title="{{translate($cash_after_services[0]['info_message'] ?? '')}}"
+                                                            <span
+                                                                class="text-capitalize">{{translate($cash_after_services[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($cash_after_services[0]['info_message'] ?? '')}}"
                                                             >info</i>
                                                         </div>
                                                         <label class="switcher">
                                                             @php($value = $data_values->where('key_name', $cash_after_services[0]['key'])?->first()?->live_values ?? null)
-                                                            <input class="switcher_input" id="{{$cash_after_services[0]['key']}}" type="checkbox" name="{{$cash_after_services[0]['key']}}"
-                                                                    value="1" {{$value ? 'checked' : ''}}
-                                                                    onclick="switch_alert('{{$cash_after_services[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($cash_after_services[0]['key']))}}')"
+                                                            <input class="switcher_input"
+                                                                   id="{{$cash_after_services[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$cash_after_services[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$cash_after_services[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($cash_after_services[0]['key']))}}')"
                                                             >
                                                             <span class="switcher_control"></span>
                                                         </label>
@@ -456,16 +502,20 @@
                                                 <div class="col-md-6 col-12 mb-30">
                                                     <div class="border p-3 rounded d-flex justify-content-between">
                                                         <div>
-                                                            <span class="text-capitalize">{{translate($digital_payments[0]['title'])}}</span>
-                                                            <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                title="{{translate($digital_payments[0]['info_message'] ?? '')}}"
+                                                            <span
+                                                                class="text-capitalize">{{translate($digital_payments[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($digital_payments[0]['info_message'] ?? '')}}"
                                                             >info</i>
                                                         </div>
                                                         <label class="switcher">
                                                             @php($value = $data_values->where('key_name', $digital_payments[0]['key'])?->first()?->live_values ?? null)
-                                                            <input class="switcher_input" id="{{$digital_payments[0]['key']}}" type="checkbox" name="{{$digital_payments[0]['key']}}"
-                                                                    value="1" {{$value ? 'checked' : ''}}
-                                                                    onclick="switch_alert('{{$digital_payments[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($digital_payments[0]['key']))}}')"
+                                                            <input class="switcher_input"
+                                                                   id="{{$digital_payments[0]['key']}}" type="checkbox"
+                                                                   name="{{$digital_payments[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$digital_payments[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($digital_payments[0]['key']))}}')"
                                                             >
                                                             <span class="switcher_control"></span>
                                                         </label>
@@ -475,45 +525,64 @@
                                                 <div class="col-md-6 col-12 mb-30">
                                                     <div class="border p-3 rounded d-flex justify-content-between">
                                                         <div>
-                                                            <span class="text-capitalize">{{translate($partials_payments[0]['title'])}}</span>
-                                                            <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                title="{{translate($partials_payments[0]['info_message'] ?? '')}}"
+                                                            <span
+                                                                class="text-capitalize">{{translate($partials_payments[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($partials_payments[0]['info_message'] ?? '')}}"
                                                             >info</i>
                                                         </div>
                                                         <label class="switcher">
                                                             @php($value = $data_values->where('key_name', $partials_payments[0]['key'])?->first()?->live_values ?? null)
-                                                            <input class="switcher_input" id="{{$partials_payments[0]['key']}}" type="checkbox" name="{{$partials_payments[0]['key']}}"
-                                                                    value="1" {{$value ? 'checked' : ''}}
-                                                                    onclick="switch_alert('{{$partials_payments[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($partials_payments[0]['key']))}}')"
+                                                            <input class="switcher_input"
+                                                                   id="{{$partials_payments[0]['key']}}" type="checkbox"
+                                                                   name="{{$partials_payments[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$partials_payments[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($partials_payments[0]['key']))}}')"
                                                             >
                                                             <span class="switcher_control"></span>
                                                         </label>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6 col-12 mb-30">
-                                                    <label for="partials_payment_combinator" class="mb-2">{{translate($partials_payment_combinators[0]['title'])}}</label>
-                                                    <div class="border p-3 rounded d-flex justify-content-between gap-2">
+                                                    <label for="partials_payment_combinator"
+                                                           class="mb-2">{{translate($partials_payment_combinators[0]['title'])}}</label>
+                                                    <div
+                                                        class="border p-3 rounded d-flex justify-content-between gap-2">
                                                         <div class="d-flex align-items-start gap-3 gap-xl-4">
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="cash_after_service_combinator" name="partial_payment_combinator" value="cash_after_service" {{$data_values->where('key_name', $partials_payment_combinators[0]['key'])->first()->live_values == 'cash_after_service' ? 'checked' : ''}}>
-                                                                <label for="cash_after_service_combinator">{{translate('Cash After Service')}}</label>
+                                                                <input type="radio" id="cash_after_service_combinator"
+                                                                       name="partial_payment_combinator"
+                                                                       value="cash_after_service" {{$data_values->where('key_name', $partials_payment_combinators[0]['key'])->first()->live_values == 'cash_after_service' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="cash_after_service_combinator">{{translate('Cash After Service')}}</label>
                                                             </div>
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="digital_payment_combinator" name="partial_payment_combinator" value="digital_payment"  {{$data_values->where('key_name', $partials_payment_combinators[0]['key'])->first()->live_values == 'digital_payment' ? 'checked' : ''}}>
-                                                                <label for="digital_payment_combinator">{{translate('Digital Payment')}}</label>
+                                                                <input type="radio" id="digital_payment_combinator"
+                                                                       name="partial_payment_combinator"
+                                                                       value="digital_payment" {{$data_values->where('key_name', $partials_payment_combinators[0]['key'])->first()->live_values == 'digital_payment' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="digital_payment_combinator">{{translate('Digital Payment')}}</label>
                                                             </div>
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="offline_payment_combinator" name="partial_payment_combinator" value="offline_payment"  {{$data_values->where('key_name', $partials_payment_combinators[0]['key'])->first()->live_values == 'offline_payment' ? 'checked' : ''}}>
-                                                                <label for="offline_payment_combinator">{{translate('Offline Payment')}}</label>
+                                                                <input type="radio" id="offline_payment_combinator"
+                                                                       name="partial_payment_combinator"
+                                                                       value="offline_payment" {{$data_values->where('key_name', $partials_payment_combinators[0]['key'])->first()->live_values == 'offline_payment' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="offline_payment_combinator">{{translate('Offline Payment')}}</label>
                                                             </div>
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="all_combinator" name="partial_payment_combinator" value="all"  {{$data_values->where('key_name', $partials_payment_combinators[0]['key'])->first()->live_values == 'all' ? 'checked' : ''}}>
+                                                                <input type="radio" id="all_combinator"
+                                                                       name="partial_payment_combinator"
+                                                                       value="all" {{$data_values->where('key_name', $partials_payment_combinators[0]['key'])->first()->live_values == 'all' ? 'checked' : ''}}>
                                                                 <label for="all_combinator">{{translate('All')}}</label>
                                                             </div>
                                                         </div>
 
                                                         <div>
-                                                            <i class="material-icons cursor-pointer" data-bs-toggle="tooltip" title="{{$partials_payment_combinators[0]['info_message']}}">info</i>
+                                                            <i class="material-icons cursor-pointer"
+                                                               data-bs-toggle="tooltip"
+                                                               title="{{$partials_payment_combinators[0]['info_message']}}">info</i>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -521,16 +590,20 @@
                                                 <div class="col-md-6 col-12 mb-30">
                                                     <div class="border p-3 rounded d-flex justify-content-between">
                                                         <div>
-                                                            <span class="text-capitalize">{{translate($offline_payments[0]['title'])}}</span>
-                                                            <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                title="{{translate($offline_payments[0]['info_message'] ?? '')}}"
+                                                            <span
+                                                                class="text-capitalize">{{translate($offline_payments[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($offline_payments[0]['info_message'] ?? '')}}"
                                                             >info</i>
                                                         </div>
                                                         <label class="switcher">
                                                             @php($value = $data_values->where('key_name', $offline_payments[0]['key'])?->first()?->live_values ?? null)
-                                                            <input class="switcher_input" id="{{$offline_payments[0]['key']}}" type="checkbox" name="{{$offline_payments[0]['key']}}"
-                                                                    value="1" {{$value ? 'checked' : ''}}
-                                                                    onclick="switch_alert('{{$offline_payments[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($offline_payments[0]['key']))}}')"
+                                                            <input class="switcher_input"
+                                                                   id="{{$offline_payments[0]['key']}}" type="checkbox"
+                                                                   name="{{$offline_payments[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$offline_payments[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($offline_payments[0]['key']))}}')"
                                                             >
                                                             <span class="switcher_control"></span>
                                                         </label>
@@ -540,16 +613,20 @@
                                                 <div class="col-md-6 col-12 mb-30">
                                                     <div class="border p-3 rounded d-flex justify-content-between">
                                                         <div>
-                                                            <span class="text-capitalize">{{translate($guest_checkouts[0]['title'])}}</span>
-                                                            <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                title="{{translate($guest_checkouts[0]['info_message'] ?? '')}}"
+                                                            <span
+                                                                class="text-capitalize">{{translate($guest_checkouts[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($guest_checkouts[0]['info_message'] ?? '')}}"
                                                             >info</i>
                                                         </div>
                                                         <label class="switcher">
                                                             @php($value = $data_values->where('key_name', $guest_checkouts[0]['key'])?->first()?->live_values ?? null)
-                                                            <input class="switcher_input" id="{{$guest_checkouts[0]['key']}}" type="checkbox" name="{{$guest_checkouts[0]['key']}}"
-                                                                    value="1" {{$value ? 'checked' : ''}}
-                                                                    onclick="switch_alert('{{$guest_checkouts[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($guest_checkouts[0]['key']))}}')"
+                                                            <input class="switcher_input"
+                                                                   id="{{$guest_checkouts[0]['key']}}" type="checkbox"
+                                                                   name="{{$guest_checkouts[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$guest_checkouts[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($guest_checkouts[0]['key']))}}')"
                                                             >
                                                             <span class="switcher_control"></span>
                                                         </label>
@@ -575,181 +652,196 @@
 
                     <!-- Booking Setup -->
                     @if($web_page=='bookings')
-                    <div class="tab-content">
-                        <div class="tab-pane fade {{$web_page=='bookings'?'active show':''}}"
-                             id="business-info">
-                            <div class="card">
-                                <div class="card-body p-30">
-                                    <form action="javascript:void(0)" method="POST" id="booking-system-update-form">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="row g-4">
-                                              <!-- bidding status -->
-                                              <div class="col-md-6 col-12">
-                                                <div class="border p-3 rounded d-flex justify-content-between">
-                                                    <div>
-                                                        <span>{{translate('bidding_System_For_Customer_Booking')}}</span>
-                                                        <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                           title="{{translate('User  can use the bid feature to create post for customize service requests while the option is enabled')}}"
-                                                        >info</i>
+                        <div class="tab-content">
+                            <div class="tab-pane fade {{$web_page=='bookings'?'active show':''}}"
+                                 id="business-info">
+                                <div class="card">
+                                    <div class="card-body p-30">
+                                        <form action="javascript:void(0)" method="POST" id="booking-system-update-form">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="row g-4">
+                                                <!-- bidding status -->
+                                                <div class="col-md-6 col-12">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span>{{translate('bidding_System_For_Customer_Booking')}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate('User  can use the bid feature to create post for customize service requests while the option is enabled')}}"
+                                                            >info</i>
+                                                        </div>
+                                                        <label class="switcher">
+                                                            <input class="switcher_input" type="checkbox"
+                                                                   name="bidding_status" value="1" id="bidding_status"
+                                                                   {{$data_values->where('key_name', 'bidding_status')->first()?->live_values ?'checked':''}}
+                                                                   onclick="switch_alert('bidding_status', $(this).is(':checked')===true?1:0,  'Want to change the status of bidding system')">
+                                                            <span class="switcher_control"></span>
+                                                        </label>
                                                     </div>
-                                                    <label class="switcher">
-                                                        <input class="switcher_input" type="checkbox" name="bidding_status" value="1" id="bidding_status"
-                                                            {{$data_values->where('key_name', 'bidding_status')->first()?->live_values ?'checked':''}}
-                                                            onclick="switch_alert('bidding_status', $(this).is(':checked')===true?1:0,  'Want to change the status of bidding system')">
-                                                        <span class="switcher_control"></span>
-                                                    </label>
                                                 </div>
-                                            </div>
 
-                                            <!-- bidding post validation -->
-                                            <div class="col-md-6 col-12">
-                                                <div class="form-floating">
-                                                    <input class="form-control" name="bidding_post_validity"
-                                                           placeholder="{{translate('Post Validation (days)')}} *"
-                                                           type="number" required
-                                                    value="{{$data_values->where('key_name', 'bidding_post_validity')->first()->live_values ?? ''}}">
-                                                    <label>{{translate('Post Validation (days)')}} *</label>
-                                                </div>
-                                            </div>
-
-                                            <!-- See other provider offers -->
-                                            <div class="col-md-6 col-12">
-                                                <div class="border p-3 rounded d-flex justify-content-between">
-                                                    <div>
-                                                        <span>{{translate('See Other Providers Offers')}}</span>
-                                                        <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                           title="{{translate('Provider can see the bid offers of other provider')}}"
-                                                        >info</i>
+                                                <!-- bidding post validation -->
+                                                <div class="col-md-6 col-12">
+                                                    <div class="form-floating">
+                                                        <input class="form-control" name="bidding_post_validity"
+                                                               placeholder="{{translate('Post Validation (days)')}} *"
+                                                               type="number" required
+                                                               value="{{$data_values->where('key_name', 'bidding_post_validity')->first()->live_values ?? ''}}">
+                                                        <label>{{translate('Post Validation (days)')}} *</label>
                                                     </div>
-                                                    <label class="switcher">
-                                                        <input class="switcher_input" type="checkbox" name="bid_offers_visibility_for_providers" value="1" id="bid_offer_visibility"
-                                                            {{$data_values->where('key_name', 'bid_offers_visibility_for_providers')->first()?->live_values ?'checked':''}}
-                                                            onclick="switch_alert('bid_offer_visibility', $(this).is(':checked')===true?1:0,  'Want to change the status of provider offers')">
-                                                        <span class="switcher_control"></span>
-                                                    </label>
                                                 </div>
-                                            </div>
-                                            <!-- Booking Otp -->
-                                            <div class="col-md-6 col-12">
-                                                <div class="border p-3 rounded d-flex justify-content-between">
-                                                    <div>
-                                                        <span>{{translate('confirmation_OTP_for_Complete_Service')}}</span>
-                                                        <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                           title="{{translate('confirmation_OTP_for_Complete_Service')}}"
-                                                        >info</i>
+
+                                                <!-- See other provider offers -->
+                                                <div class="col-md-6 col-12">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span>{{translate('See Other Providers Offers')}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate('Provider can see the bid offers of other provider')}}"
+                                                            >info</i>
+                                                        </div>
+                                                        <label class="switcher">
+                                                            <input class="switcher_input" type="checkbox"
+                                                                   name="bid_offers_visibility_for_providers" value="1"
+                                                                   id="bid_offer_visibility"
+                                                                   {{$data_values->where('key_name', 'bid_offers_visibility_for_providers')->first()?->live_values ?'checked':''}}
+                                                                   onclick="switch_alert('bid_offer_visibility', $(this).is(':checked')===true?1:0,  'Want to change the status of provider offers')">
+                                                            <span class="switcher_control"></span>
+                                                        </label>
                                                     </div>
-                                                    <label class="switcher">
-                                                        <input class="switcher_input" type="checkbox" name="booking_otp" value="1" id="booking_otp"
-                                                            {{$data_values->where('key_name', 'booking_otp')->first()?->live_values ?'checked':''}}
-                                                            onclick="switch_alert('booking_otp', $(this).is(':checked')===true?1:0,  'Want to change the status of confirmation otp for complete service')">
-                                                        <span class="switcher_control"></span>
-                                                    </label>
                                                 </div>
-                                            </div>
-
-                                            <!-- Booking Additional Charge -->
-                                            <div class="col-md-6 col-12">
-                                                <div class="border p-3 rounded d-flex justify-content-between">
-                                                    <div>
-                                                        <span>{{translate('Additional_Charge_on_Booking')}}</span>
-                                                        <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                            title="{{translate('Admin can charge additional serivce charge')}}"
-                                                        >info</i>
+                                                <!-- Booking Otp -->
+                                                <div class="col-md-6 col-12">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span>{{translate('confirmation_OTP_for_Complete_Service')}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate('confirmation_OTP_for_Complete_Service')}}"
+                                                            >info</i>
+                                                        </div>
+                                                        <label class="switcher">
+                                                            <input class="switcher_input" type="checkbox"
+                                                                   name="booking_otp" value="1" id="booking_otp"
+                                                                   {{$data_values->where('key_name', 'booking_otp')->first()?->live_values ?'checked':''}}
+                                                                   onclick="switch_alert('booking_otp', $(this).is(':checked')===true?1:0,  'Want to change the status of confirmation otp for complete service')">
+                                                            <span class="switcher_control"></span>
+                                                        </label>
                                                     </div>
-                                                    <label class="switcher">
-                                                        <input class="switcher_input" type="checkbox" name="booking_additional_charge" value="1" id="booking_additional_charge"
-                                                            {{$data_values->where('key_name', 'booking_additional_charge')->first()?->live_values ?'checked':''}}
-                                                            onclick="switch_alert('booking_additional_charge', $(this).is(':checked')===true?1:0,  'Want to change the status Additional Charge on Booking')">
-                                                        <span class="switcher_control"></span>
-                                                    </label>
                                                 </div>
-                                            </div>
 
-                                            <div class="col-md-3 col-12">
-                                                <div class="form-floating">
-                                                    <input class="form-control remove-spin" name="additional_charge_label_name"
-                                                           placeholder="{{translate('Additional Charge Label')}} *"
-                                                           type="text" required
-                                                           value="{{$data_values->where('key_name', 'additional_charge_label_name')->first()->live_values ?? ''}}"
-                                                           >
-                                                    <label>{{translate('Additional Charge Label')}}* </label>
-
-                                                    <span class="material-icons" data-bs-toggle="tooltip"
-                                                           title="{{ translate('additional_charge_label_name') }}">info</span>
+                                                <!-- Booking Additional Charge -->
+                                                <div class="col-md-6 col-12">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span>{{translate('Additional_Charge_on_Booking')}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate('Admin can charge additional serivce charge')}}"
+                                                            >info</i>
+                                                        </div>
+                                                        <label class="switcher">
+                                                            <input class="switcher_input" type="checkbox"
+                                                                   name="booking_additional_charge" value="1"
+                                                                   id="booking_additional_charge"
+                                                                   {{$data_values->where('key_name', 'booking_additional_charge')->first()?->live_values ?'checked':''}}
+                                                                   onclick="switch_alert('booking_additional_charge', $(this).is(':checked')===true?1:0,  'Want to change the status Additional Charge on Booking')">
+                                                            <span class="switcher_control"></span>
+                                                        </label>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div class="col-md-3 col-12">
-                                                <div class="form-floating">
-                                                    <input class="form-control remove-spin" name="additional_charge_fee_amount"
-                                                           placeholder="{{translate('Additional charge fee')}} *"
-                                                           type="number" min="0" step="any" required
-                                                           value="{{$data_values->where('key_name', 'additional_charge_fee_amount')->first()->live_values ?? ''}}"
-                                                           >
-                                                    <label>{{translate('Additional charge fee')}}* </label>
+                                                <div class="col-md-3 col-12">
+                                                    <div class="form-floating">
+                                                        <input class="form-control remove-spin"
+                                                               name="additional_charge_label_name"
+                                                               placeholder="{{translate('Additional Charge Label')}} *"
+                                                               type="text" required
+                                                               value="{{$data_values->where('key_name', 'additional_charge_label_name')->first()->live_values ?? ''}}"
+                                                        >
+                                                        <label>{{translate('Additional Charge Label')}}* </label>
 
-                                                    <span class="material-icons" data-bs-toggle="tooltip"
-                                                           title="{{ translate('Additional charge fee') }}">info</span>
+                                                        <span class="material-icons" data-bs-toggle="tooltip"
+                                                              title="{{ translate('additional_charge_label_name') }}">info</span>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                        <!-- min booking amount -->
-                                        <div class="col-md-6 col-12">
-                                            <div class="form-floating">
-                                                <input class="form-control" name="min_booking_amount"
-                                                        placeholder="{{translate('Post Validation (days)')}} *"
-                                                        type="number" required step="any"
-                                                value="{{$data_values->where('key_name', 'min_booking_amount')->first()->live_values ?? ''}}">
-                                                <label>{{translate('min_booking_amount')}} *</label>
-                                            </div>
-                                        </div>
+                                                <div class="col-md-3 col-12">
+                                                    <div class="form-floating">
+                                                        <input class="form-control remove-spin"
+                                                               name="additional_charge_fee_amount"
+                                                               placeholder="{{translate('Additional charge fee')}} *"
+                                                               type="number" min="0" step="any" required
+                                                               value="{{$data_values->where('key_name', 'additional_charge_fee_amount')->first()->live_values ?? ''}}"
+                                                        >
+                                                        <label>{{translate('Additional charge fee')}}* </label>
 
-                                        <!-- max booking amount -->
-                                        <div class="col-md-6 col-12">
-                                            <div class="form-floating">
-                                                <input class="form-control" name="max_booking_amount"
-                                                        placeholder="{{translate('Post Validation (days)')}} *"
-                                                        type="number" required step="any"
-                                                value="{{$data_values->where('key_name', 'max_booking_amount')->first()->live_values ?? ''}}">
-                                                <label>{{translate('max_booking_amount')}} *</label>
-                                            </div>
-                                        </div>
-
-                                        <!-- service_complete_photo_evidence -->
-
-                                        <div class="col-md-6 col-12">
-                                            <div class="border p-3 rounded d-flex justify-content-between">
-                                                <div>
-                                                    <span>{{translate('Service_complete_Photo_Evidence')}}</span>
-                                                    <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                        title="{{translate('Photo evidence can be uploaded before completing the service')}}"
-                                                    >info</i>
+                                                        <span class="material-icons" data-bs-toggle="tooltip"
+                                                              title="{{ translate('Additional charge fee') }}">info</span>
+                                                    </div>
                                                 </div>
-                                                <label class="switcher">
-                                                    <input class="switcher_input" type="checkbox" name="service_complete_photo_evidence" value="1" id="photo_evidence"
-                                                        {{$data_values->where('key_name', 'service_complete_photo_evidence')->first()?->live_values ?'checked':''}}
-                                                        onclick="switch_alert('photo_evidence', $(this).is(':checked')===true?1:0,  'Want to change the status Take Picture Before Complete')">
-                                                    <span class="switcher_control"></span>
-                                                </label>
+
+                                                <!-- min booking amount -->
+                                                <div class="col-md-6 col-12">
+                                                    <div class="form-floating">
+                                                        <input class="form-control" name="min_booking_amount"
+                                                               placeholder="{{translate('Post Validation (days)')}} *"
+                                                               type="number" required step="any"
+                                                               value="{{$data_values->where('key_name', 'min_booking_amount')->first()->live_values ?? ''}}">
+                                                        <label>{{translate('min_booking_amount')}} *</label>
+                                                    </div>
+                                                </div>
+
+                                                <!-- max booking amount -->
+                                                <div class="col-md-6 col-12">
+                                                    <div class="form-floating">
+                                                        <input class="form-control" name="max_booking_amount"
+                                                               placeholder="{{translate('Post Validation (days)')}} *"
+                                                               type="number" required step="any"
+                                                               value="{{$data_values->where('key_name', 'max_booking_amount')->first()->live_values ?? ''}}">
+                                                        <label>{{translate('max_booking_amount')}} *</label>
+                                                    </div>
+                                                </div>
+
+                                                <!-- service_complete_photo_evidence -->
+
+                                                <div class="col-md-6 col-12">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span>{{translate('Service_complete_Photo_Evidence')}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate('Photo evidence can be uploaded before completing the service')}}"
+                                                            >info</i>
+                                                        </div>
+                                                        <label class="switcher">
+                                                            <input class="switcher_input" type="checkbox"
+                                                                   name="service_complete_photo_evidence" value="1"
+                                                                   id="photo_evidence"
+                                                                   {{$data_values->where('key_name', 'service_complete_photo_evidence')->first()?->live_values ?'checked':''}}
+                                                                   onclick="switch_alert('photo_evidence', $(this).is(':checked')===true?1:0,  'Want to change the status Take Picture Before Complete')">
+                                                            <span class="switcher_control"></span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
                                             </div>
-                                        </div>
 
-                                        </div>
-
-                                        <div class="d-flex gap-2 justify-content-end mt-3">
-                                            <button type="reset" class="btn btn-secondary">
-                                                {{translate('reset')}}
-                                            </button>
-                                            <button type="submit" class="btn btn--primary">
-                                                {{translate('update')}}
-                                            </button>
-                                        </div>
-                                    </form>
+                                            <div class="d-flex gap-2 justify-content-end mt-3">
+                                                <button type="reset" class="btn btn-secondary">
+                                                    {{translate('reset')}}
+                                                </button>
+                                                <button type="submit" class="btn btn--primary">
+                                                    {{translate('update')}}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
                     @endif
 
                     <!-- Promotional Setup -->
@@ -769,26 +861,39 @@
                                             </div>
                                             <div class="card-body p-30">
                                                 <h5 class="pb-4">{{translate('Discount_Cost_Bearer')}}</h5>
-                                                <form action="{{route('admin.business-settings.set-promotion-setup')}}" method="POST" enctype="multipart/form-data">
+                                                <form action="{{route('admin.business-settings.set-promotion-setup')}}"
+                                                      method="POST" enctype="multipart/form-data">
                                                     @csrf
                                                     @method('PUT')
                                                     <div class="d-flex flex-column flex-sm-row flex-wrap gap-3">
-                                                        <div class="d-flex align-items-start flex-column gap-3 gap-xl-4 mb-30 flex-grow-1">
+                                                        <div
+                                                            class="d-flex align-items-start flex-column gap-3 gap-xl-4 mb-30 flex-grow-1">
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="admin-select__discount" name="bearer" value="admin" {{isset($data) && $data['bearer'] == 'admin' ? 'checked' : ''}}>
-                                                                <label for="admin-select__discount">{{translate('Admin')}}</label>
+                                                                <input type="radio" id="admin-select__discount"
+                                                                       name="bearer"
+                                                                       value="admin" {{isset($data) && $data['bearer'] == 'admin' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="admin-select__discount">{{translate('Admin')}}</label>
                                                             </div>
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="provider-select__discount" name="bearer" value="provider" {{isset($data) && $data['bearer'] == 'provider' ? 'checked' : ''}}>
-                                                                <label for="provider-select__discount">{{translate('Provider')}}</label>
+                                                                <input type="radio" id="provider-select__discount"
+                                                                       name="bearer"
+                                                                       value="provider" {{isset($data) && $data['bearer'] == 'provider' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="provider-select__discount">{{translate('Provider')}}</label>
                                                             </div>
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="both-select__discount" name="bearer" value="both" {{isset($data) && $data['bearer'] == 'both' ? 'checked' : ''}}>
-                                                                <label for="both-select__discount">{{translate('Both')}}</label>
+                                                                <input type="radio" id="both-select__discount"
+                                                                       name="bearer"
+                                                                       value="both" {{isset($data) && $data['bearer'] == 'both' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="both-select__discount">{{translate('Both')}}</label>
                                                             </div>
                                                         </div>
 
-                                                        <div class="flex-grow-1 {{isset($data) && ($data['bearer'] != 'admin' && $data['bearer'] != 'provider') ? '' : 'd-none'}}" id="bearer-section__discount">
+                                                        <div
+                                                            class="flex-grow-1 {{isset($data) && ($data['bearer'] != 'admin' && $data['bearer'] != 'provider') ? '' : 'd-none'}}"
+                                                            id="bearer-section__discount">
                                                             <div class="mb-30">
                                                                 <div class="form-floating">
                                                                     <input type="number" class="form-control"
@@ -808,7 +913,8 @@
                                                                            placeholder="{{translate('Provider_Percentage')}} (%)"
                                                                            value="{{!is_null($data) ? $data['provider_percentage'] : ''}}"
                                                                            min="0" max="100" step="any">
-                                                                    <label>{{translate('Provider_Percentage')}} (%)</label>
+                                                                    <label>{{translate('Provider_Percentage')}}
+                                                                        (%)</label>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -836,26 +942,39 @@
                                             </div>
                                             <div class="card-body p-30">
                                                 <h5 class="pb-4">{{translate('Campaign_Cost_Bearer')}}</h5>
-                                                <form action="{{route('admin.business-settings.set-promotion-setup')}}" method="POST" enctype="multipart/form-data">
+                                                <form action="{{route('admin.business-settings.set-promotion-setup')}}"
+                                                      method="POST" enctype="multipart/form-data">
                                                     @csrf
                                                     @method('PUT')
                                                     <div class="d-flex flex-column flex-sm-row flex-wrap gap-3">
-                                                        <div class="d-flex align-items-start flex-column gap-3 gap-xl-4 mb-30 flex-grow-1">
+                                                        <div
+                                                            class="d-flex align-items-start flex-column gap-3 gap-xl-4 mb-30 flex-grow-1">
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="admin-select__campaign" name="bearer" value="admin" {{isset($data) && $data['bearer'] == 'admin' ? 'checked' : ''}}>
-                                                                <label for="admin-select__campaign">{{translate('Admin')}}</label>
+                                                                <input type="radio" id="admin-select__campaign"
+                                                                       name="bearer"
+                                                                       value="admin" {{isset($data) && $data['bearer'] == 'admin' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="admin-select__campaign">{{translate('Admin')}}</label>
                                                             </div>
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="provider-select__campaign" name="bearer" value="provider" {{isset($data) && $data['bearer'] == 'provider' ? 'checked' : ''}}>
-                                                                <label for="provider-select__campaign">{{translate('Provider')}}</label>
+                                                                <input type="radio" id="provider-select__campaign"
+                                                                       name="bearer"
+                                                                       value="provider" {{isset($data) && $data['bearer'] == 'provider' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="provider-select__campaign">{{translate('Provider')}}</label>
                                                             </div>
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="both-select__campaign" name="bearer" value="both" {{isset($data) && $data['bearer'] == 'both' ? 'checked' : ''}}>
-                                                                <label for="both-select__campaign">{{translate('Both')}}</label>
+                                                                <input type="radio" id="both-select__campaign"
+                                                                       name="bearer"
+                                                                       value="both" {{isset($data) && $data['bearer'] == 'both' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="both-select__campaign">{{translate('Both')}}</label>
                                                             </div>
                                                         </div>
 
-                                                        <div class="flex-grow-1 {{isset($data) && ($data['bearer'] != 'admin' && $data['bearer'] != 'provider') ? '' : 'd-none'}}" id="bearer-section__campaign">
+                                                        <div
+                                                            class="flex-grow-1 {{isset($data) && ($data['bearer'] != 'admin' && $data['bearer'] != 'provider') ? '' : 'd-none'}}"
+                                                            id="bearer-section__campaign">
                                                             <div class="mb-30">
                                                                 <div class="form-floating">
                                                                     <input type="number" class="form-control"
@@ -875,7 +994,8 @@
                                                                            placeholder="{{translate('Provider_Percentage')}} (%)"
                                                                            value="{{!is_null($data) ? $data['provider_percentage'] : ''}}"
                                                                            min="0" max="100" step="any">
-                                                                    <label>{{translate('Provider_Percentage')}} (%)</label>
+                                                                    <label>{{translate('Provider_Percentage')}}
+                                                                        (%)</label>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -903,26 +1023,39 @@
                                             </div>
                                             <div class="card-body p-30">
                                                 <h5 class="pb-4">{{translate('Coupon_Cost_Bearer')}}</h5>
-                                                <form action="{{route('admin.business-settings.set-promotion-setup')}}" method="POST" enctype="multipart/form-data">
+                                                <form action="{{route('admin.business-settings.set-promotion-setup')}}"
+                                                      method="POST" enctype="multipart/form-data">
                                                     @csrf
                                                     @method('PUT')
                                                     <div class="d-flex flex-column flex-sm-row flex-wrap gap-3">
-                                                        <div class="d-flex align-items-start flex-column gap-3 gap-xl-4 mb-30 flex-grow-1">
+                                                        <div
+                                                            class="d-flex align-items-start flex-column gap-3 gap-xl-4 mb-30 flex-grow-1">
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="admin-select__coupon" name="bearer" value="admin" {{isset($data) && $data['bearer'] == 'admin' ? 'checked' : ''}}>
-                                                                <label for="admin-select__coupon">{{translate('Admin')}}</label>
+                                                                <input type="radio" id="admin-select__coupon"
+                                                                       name="bearer"
+                                                                       value="admin" {{isset($data) && $data['bearer'] == 'admin' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="admin-select__coupon">{{translate('Admin')}}</label>
                                                             </div>
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="provider-select__coupon" name="bearer" value="provider" {{isset($data) && $data['bearer'] == 'provider' ? 'checked' : ''}}>
-                                                                <label for="provider-select__coupon">{{translate('Provider')}}</label>
+                                                                <input type="radio" id="provider-select__coupon"
+                                                                       name="bearer"
+                                                                       value="provider" {{isset($data) && $data['bearer'] == 'provider' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="provider-select__coupon">{{translate('Provider')}}</label>
                                                             </div>
                                                             <div class="custom-radio">
-                                                                <input type="radio" id="both-select__coupon" name="bearer" value="both" {{isset($data) && $data['bearer'] == 'both' ? 'checked' : ''}}>
-                                                                <label for="both-select__coupon">{{translate('Both')}}</label>
+                                                                <input type="radio" id="both-select__coupon"
+                                                                       name="bearer"
+                                                                       value="both" {{isset($data) && $data['bearer'] == 'both' ? 'checked' : ''}}>
+                                                                <label
+                                                                    for="both-select__coupon">{{translate('Both')}}</label>
                                                             </div>
                                                         </div>
 
-                                                        <div class="flex-grow-1 {{isset($data) && ($data['bearer'] != 'admin' && $data['bearer'] != 'provider') ? '' : 'd-none'}}" id="bearer-section__coupon">
+                                                        <div
+                                                            class="flex-grow-1 {{isset($data) && ($data['bearer'] != 'admin' && $data['bearer'] != 'provider') ? '' : 'd-none'}}"
+                                                            id="bearer-section__coupon">
                                                             <div class="mb-30">
                                                                 <div class="form-floating">
                                                                     <input type="number" class="form-control"
@@ -942,7 +1075,8 @@
                                                                            placeholder="{{translate('Provider_Percentage')}} (%)"
                                                                            value="{{!is_null($data) ? $data['provider_percentage'] : ''}}"
                                                                            min="0" max="100" step="any">
-                                                                    <label>{{translate('Provider_Percentage')}} (%)</label>
+                                                                    <label>{{translate('Provider_Percentage')}}
+                                                                        (%)</label>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -970,7 +1104,8 @@
                                  id="business-info">
                                 <div class="card">
                                     <div class="card-body p-30">
-                                        <form action="{{route('admin.business-settings.set-servicemen')}}" method="POST">
+                                        <form action="{{route('admin.business-settings.set-servicemen')}}"
+                                              method="POST">
                                             @csrf
                                             @method('PUT')
                                             <div class="row g-4">
@@ -980,16 +1115,21 @@
                                                 <div class="col-md-6 col-12 mb-30">
                                                     <div class="border p-3 rounded d-flex justify-content-between">
                                                         <div>
-                                                            <span class="text-capitalize">{{translate($service_man_booking_cancel[0]['title'])}}</span>
-                                                            <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                title="{{translate($service_man_booking_cancel[0]['info_message'] ?? '')}}"
+                                                            <span
+                                                                class="text-capitalize">{{translate($service_man_booking_cancel[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($service_man_booking_cancel[0]['info_message'] ?? '')}}"
                                                             >info</i>
                                                         </div>
                                                         <label class="switcher">
                                                             @php($value = $data_values->where('key_name', $service_man_booking_cancel[0]['key'])?->first()?->live_values ?? null)
-                                                            <input class="switcher_input" id="{{$service_man_booking_cancel[0]['key']}}" type="checkbox" name="{{$service_man_booking_cancel[0]['key']}}"
-                                                                    value="1" {{$value ? 'checked' : ''}}
-                                                                    onclick="switch_alert('{{$service_man_booking_cancel[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($service_man_booking_cancel[0]['key']))}}')"
+                                                            <input class="switcher_input"
+                                                                   id="{{$service_man_booking_cancel[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$service_man_booking_cancel[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$service_man_booking_cancel[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($service_man_booking_cancel[0]['key']))}}')"
                                                             >
                                                             <span class="switcher_control"></span>
                                                         </label>
@@ -999,16 +1139,21 @@
                                                 <div class="col-md-6 col-12 mb-30">
                                                     <div class="border p-3 rounded d-flex justify-content-between">
                                                         <div>
-                                                            <span class="text-capitalize">{{translate($service_man_booking_edit[0]['title'])}}</span>
-                                                            <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                                title="{{translate($service_man_booking_edit[0]['info_message'] ?? '')}}"
+                                                            <span
+                                                                class="text-capitalize">{{translate($service_man_booking_edit[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($service_man_booking_edit[0]['info_message'] ?? '')}}"
                                                             >info</i>
                                                         </div>
                                                         <label class="switcher">
                                                             @php($value = $data_values->where('key_name', $service_man_booking_edit[0]['key'])?->first()?->live_values ?? null)
-                                                            <input class="switcher_input" id="{{$service_man_booking_edit[0]['key']}}" type="checkbox" name="{{$service_man_booking_edit[0]['key']}}"
-                                                                    value="1" {{$value ? 'checked' : ''}}
-                                                                    onclick="switch_alert('{{$service_man_booking_edit[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($service_man_booking_edit[0]['key']))}}')"
+                                                            <input class="switcher_input"
+                                                                   id="{{$service_man_booking_edit[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$service_man_booking_edit[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$service_man_booking_edit[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($service_man_booking_edit[0]['key']))}}')"
                                                             >
                                                             <span class="switcher_control"></span>
                                                         </label>
@@ -1032,138 +1177,369 @@
 
                     <!-- Customers Setup -->
                     @if($web_page=='customers')
-                    <div class="tab-content">
-                        <div class="tab-pane fade {{$web_page=='customers'?'active show':''}}"
-                             id="business-info">
-                            <div class="card">
-                                <div class="card-body p-30">
-                                    <form action="{{route('admin.business-settings.set-customer-setup')}}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="row g-4">
-                                            @php($add_fund_to_wallet = collect([ ['key' => 'customer_wallet','info_message' => 'Customer Can Add Fund to Wallet', 'title' => 'Add Fund to Wallet'] ]))
+                        <div class="tab-content">
+                            <div class="tab-pane fade {{$web_page=='customers'?'active show':''}}"
+                                 id="business-info">
+                                 <form action="{{route('admin.business-settings.set-customer-setup')}}"
+                                       method="POST">
+                                     @csrf
+                                     @method('PUT')
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h4 class="page-title d-flex align-items-center gap-2">
+                                                <i class="material-icons">redeem</i>
+                                                {{translate('Normal_Discount')}}
+                                            </h4>
+                                        </div>
+                                        <div class="card-body p-30">
+                                            <div class="row g-4 mb-30">
+                                                @php($add_fund_to_wallet = collect([ ['key' => 'customer_wallet','info_message' => 'Customer Can Add Fund to Wallet', 'title' => 'Add Fund to Wallet'] ]))
+                                                @php($customer_loyalty_point = collect([ ['key' => 'customer_loyalty_point','info_message' => 'Customer Loyalty Point', 'title' => 'Customer Loyalty Point'] ]))
+                                                @php($customer_referral_earning = collect([ ['key' => 'customer_referral_earning','info_message' => 'Customer Referral Earning', 'title' => 'Customer Referral Earning'] ]))
 
 
-                                            <div class="col-md-12 col-12 mb-30">
-                                                <div class="border p-3 rounded d-flex justify-content-between">
-                                                    <div>
-                                                        <span class="text-capitalize">{{translate($add_fund_to_wallet[0]['title'])}}</span>
-                                                        <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                            title="{{translate($add_fund_to_wallet[0]['info_message'] ?? '')}}"
-                                                        >info</i>
+                                                <div class="col-md-6 col-lg-4 col-12">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span
+                                                                class="text-capitalize">{{translate($add_fund_to_wallet[0]['title'])}}</span>
+{{--                                                            <i class="material-symbols-outlined px-1" data-bs-toggle="tooltip"--}}
+{{--                                                               data-bs-placement="top"--}}
+{{--                                                               title="{{translate($add_fund_to_wallet[0]['info_message'] ?? '')}}"--}}
+{{--                                                            >info</i>--}}
+                                                        </div>
+                                                        <label class="switcher">
+                                                            @php($value = $data_values->where('key_name', $add_fund_to_wallet[0]['key'])?->first()?->live_values ?? null)
+                                                            <input class="switcher_input"
+                                                                   id="{{$add_fund_to_wallet[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$add_fund_to_wallet[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$add_fund_to_wallet[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($add_fund_to_wallet[0]['key']))}}')"
+                                                            >
+                                                            <span class="switcher_control"></span>
+                                                        </label>
                                                     </div>
-                                                    <label class="switcher">
-                                                        @php($value = $data_values->where('key_name', $add_fund_to_wallet[0]['key'])?->first()?->live_values ?? null)
-                                                        <input class="switcher_input" id="{{$add_fund_to_wallet[0]['key']}}" type="checkbox" name="{{$add_fund_to_wallet[0]['key']}}"
-                                                                value="1" {{$value ? 'checked' : ''}}
-                                                                onclick="switch_alert('{{$add_fund_to_wallet[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($add_fund_to_wallet[0]['key']))}}')"
-                                                        >
-                                                        <span class="switcher_control"></span>
-                                                    </label>
+                                                </div>
+
+                                                <div class="col-md-6 col-lg-4 col-12">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span
+                                                                class="text-capitalize">{{translate($customer_loyalty_point[0]['title'])}}</span>
+{{--                                                            <i class="material-symbols-outlined px-1" data-bs-toggle="tooltip"--}}
+{{--                                                               data-bs-placement="top"--}}
+{{--                                                               title="{{translate($customer_loyalty_point[0]['info_message'] ?? '')}}"--}}
+{{--                                                            >info</i>--}}
+                                                        </div>
+                                                        <label class="switcher">
+                                                            @php($value = $data_values->where('key_name', $customer_loyalty_point[0]['key'])?->first()?->live_values ?? null)
+                                                            <input class="switcher_input"
+                                                                   id="{{$customer_loyalty_point[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$customer_loyalty_point[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$customer_loyalty_point[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($customer_loyalty_point[0]['key']))}}')"
+                                                            >
+                                                            <span class="switcher_control"></span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6 col-lg-4 col-12">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span
+                                                                class="text-capitalize">{{translate($customer_referral_earning[0]['title'])}}</span>
+{{--                                                            <i class="material-symbols-outlined px-1" data-bs-toggle="tooltip"--}}
+{{--                                                               data-bs-placement="top"--}}
+{{--                                                               title="{{translate($customer_referral_earning[0]['info_message'] ?? '')}}"--}}
+{{--                                                            >info</i>--}}
+                                                        </div>
+                                                        <label class="switcher">
+                                                            @php($value = $data_values->where('key_name', $customer_referral_earning[0]['key'])?->first()?->live_values ?? null)
+                                                            <input class="switcher_input"
+                                                                   id="{{$customer_referral_earning[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$customer_referral_earning[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$customer_referral_earning[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($customer_referral_earning[0]['key']))}}')"
+                                                            >
+                                                            <span class="switcher_control"></span>
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
-
                                         </div>
+                                    </div>
 
-                                        <div class="d-flex gap-2 justify-content-end mt-4">
-                                            <button type="reset" class="btn btn-secondary">{{translate('reset')}}
-                                            </button>
-                                            <button type="submit" class="btn btn--primary">{{translate('update')}}
-                                            </button>
+                                    <div class="card mt-3">
+                                        <div class="card-header">
+                                            <h4 class="page-title d-flex align-items-center gap-2">
+                                                <span class="material-symbols-outlined">
+                                                    settings
+                                                </span>
+                                                {{translate('Customer Loyalty Point Settings')}}
+{{--                                                <i class="material-symbols-outlined" data-bs-toggle="tooltip"--}}
+{{--                                                    data-bs-placement="top"--}}
+{{--                                                    title="{{translate('Dummy Tooltip Message')}}"--}}
+{{--                                                >info</i>--}}
+                                            </h4>
                                         </div>
-                                    </form>
+                                        <div class="card-body p-30">
+                                            <div class="row g-4">
+                                                <div class="col-md-6 col-lg-4">
+                                                    @php($value=$data_values->where('key_name','loyalty_point_value_per_currency_unit')->first())
+                                                    <div class="form-floating">
+                                                        <input type="number" class="form-control" name="loyalty_point_value_per_currency_unit" step="any"
+                                                                min="0" value="{{$value->live_values??''}}">
+                                                        <label class="mb-1">1 {{currency_code()}} {{translate('Equivalent Point to 1 Unit')}}?</label>
+{{--                                                        <i class="material-symbols-outlined" data-bs-toggle="tooltip"--}}
+{{--                                                            data-bs-placement="top"--}}
+{{--                                                            title="{{translate('Dummy Tooltip Message')}}"--}}
+{{--                                                        >info</i>--}}
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6 col-lg-4">
+                                                    @php($value=$data_values->where('key_name','loyalty_point_percentage_per_booking')->first())
+                                                    <div class="form-floating">
+                                                        <input type="number" class="form-control" name="loyalty_point_percentage_per_booking"
+                                                                min="0" max="100" step="any" value="{{$value->live_values??''}}">
+                                                        <label class="mb-1">{{translate('Point Earn on Each Booking')}}
+                                                        </label>
+                                                        <i class="material-symbols-outlined" data-bs-toggle="tooltip"
+                                                            data-bs-placement="top"
+                                                            title="{{translate('On every booking this percent of amount will be added as loyalty point on customer account')}}"
+                                                        >info</i>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6 col-lg-4">
+                                                    @php($value=$data_values->where('key_name','min_loyalty_point_to_transfer')->first())
+                                                    <div class="form-floating">
+                                                        <input type="number" class="form-control" name="min_loyalty_point_to_transfer" step="any"
+                                                                min="0" value="{{$value->live_values??''}}">
+                                                        <label class="mb-1">{{translate('Minimum Point Required To Convert')}}</label>
+
+{{--                                                        <i class="material-symbols-outlined" data-bs-toggle="tooltip"--}}
+{{--                                                            data-bs-placement="top"--}}
+{{--                                                            title="{{translate('Dummy Tooltip Message')}}"--}}
+{{--                                                        >info</i>--}}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card mt-3">
+                                        <div class="card-header">
+                                            <h4 class="page-title d-flex align-items-center gap-2">
+                                                <span class="material-symbols-outlined">
+                                                    settings
+                                                </span>
+                                                {{ translate('Customer_Referrer_Settings') }} ({{ currency_code() }})
+{{--                                                <i class="material-symbols-outlined" data-bs-toggle="tooltip"--}}
+{{--                                                    data-bs-placement="top"--}}
+{{--                                                    title="{{translate('Dummy Tooltip Message')}}"--}}
+{{--                                                >info</i>--}}
+                                            </h4>
+                                        </div>
+                                        <div class="card-body p-30">
+
+                                            <div class="row g-4">
+                                                <div class="col-md-6">
+                                                    @php($value=$data_values->where('key_name','referral_value_per_currency_unit')->first())
+                                                    <div class="form-floating">
+                                                        <input type="number" class="form-control" name="referral_value_per_currency_unit" step="any"
+                                                                min="0" value="{{$value->live_values??''}}">
+                                                        <label class="mb-1">{{translate('Earnings To Each Referral') . ' ' . currency_code() . '?'}}</label>
+{{--                                                        <i class="material-symbols-outlined" data-bs-toggle="tooltip"--}}
+{{--                                                            data-bs-placement="top"--}}
+{{--                                                            title="{{translate('Dummy Tooltip Message')}}"--}}
+{{--                                                        >info</i>--}}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex gap-2 justify-content-end mt-4">
+                                        <button type="reset" class="btn btn-secondary">{{translate('reset')}}
+                                        </button>
+                                        <button type="submit" class="btn btn--primary">{{translate('save')}}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
                     @endif
 
                     <!-- Providers Setup -->
                     @if($web_page=='providers')
-                    <div class="tab-content">
-                        <div class="tab-pane fade {{$web_page=='providers'?'active show':''}}"
-                             id="business-info">
-                            <div class="card">
-                                <div class="card-body p-30">
-                                    <form action="{{route('admin.business-settings.set-provider-setup')}}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="row g-4">
-                                            @php($provider_can_cancel_booking = collect([ ['key' => 'provider_can_cancel_booking','info_message' => 'Provider Can Cancel Booking', 'title' => 'Can Cancel Booking'] ]))
-                                            @php($provider_can_edit_booking = collect([ ['key' => 'provider_can_edit_booking','info_message' => 'Provider Can Edit Booking', 'title' => 'Can Edit Booking'] ]))
-                                            @php($provider_self_registration = collect([ ['key' => 'provider_self_registration','info_message' => 'Provider Can Self Registration', 'title' => 'Provider Self Registration'] ]))
+                        <div class="tab-content">
+                            <div class="tab-pane fade {{$web_page=='providers'?'active show':''}}"
+                                 id="business-info">
+                                <div class="card">
+                                    <div class="card-body p-30">
+                                        <form action="{{route('admin.business-settings.set-provider-setup')}}"
+                                              method="POST">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="row g-4">
+                                                @php($provider_can_cancel_booking = collect([ ['key' => 'provider_can_cancel_booking','info_message' => 'If enabled, providers can cancel a booking even after it has been placed.', 'title' => 'Can Cancel Booking'] ]))
+                                                @php($provider_can_edit_booking = collect([ ['key' => 'provider_can_edit_booking','info_message' => 'If enabled, providers can edit a booking request after it has been placed', 'title' => 'Can Edit Booking'] ]))
+                                                @php($provider_self_registration = collect([ ['key' => 'provider_self_registration','info_message' => 'If enabled, providers can do self-registration from the admin landing page, provider panel & app, and customer website & app.', 'title' => 'Provider Self Registration'] ]))
+                                                @php($provider_self_delete = collect([ ['key' => 'provider_self_delete','info_message' => 'If enabled, provider can delete account', 'title' => 'Provider Self Delete'] ]))
+                                                @php($suspend_on_exceed_cash_limit = collect([ ['key' => 'suspend_on_exceed_cash_limit_provider','info_message' => 'If enabled, the provider will be automatically suspended by the system when their ‘Cash in Hand’ limit is exceeded.', 'title' => 'Suspend on Exceed Cash Limit'] ]))
 
-
-                                            <div class="col-md-6 col-12 mb-30">
-                                                <div class="border p-3 rounded d-flex justify-content-between">
-                                                    <div>
-                                                        <span class="text-capitalize">{{translate($provider_can_cancel_booking[0]['title'])}}</span>
-                                                        <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                            title="{{translate($provider_can_cancel_booking[0]['info_message'] ?? '')}}"
-                                                        >info</i>
+                                                <div class="col-md-6 col-12 mb-30">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span
+                                                                class="text-capitalize">{{translate($provider_can_cancel_booking[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($provider_can_cancel_booking[0]['info_message'] ?? '')}}"
+                                                            >info</i>
+                                                        </div>
+                                                        <label class="switcher">
+                                                            @php($value = $data_values->where('key_name', $provider_can_cancel_booking[0]['key'])?->first()?->live_values ?? null)
+                                                            <input class="switcher_input"
+                                                                   id="{{$provider_can_cancel_booking[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$provider_can_cancel_booking[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$provider_can_cancel_booking[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($provider_can_cancel_booking[0]['key']))}}')"
+                                                            >
+                                                            <span class="switcher_control"></span>
+                                                        </label>
                                                     </div>
-                                                    <label class="switcher">
-                                                        @php($value = $data_values->where('key_name', $provider_can_cancel_booking[0]['key'])?->first()?->live_values ?? null)
-                                                        <input class="switcher_input" id="{{$provider_can_cancel_booking[0]['key']}}" type="checkbox" name="{{$provider_can_cancel_booking[0]['key']}}"
-                                                                value="1" {{$value ? 'checked' : ''}}
-                                                                onclick="switch_alert('{{$provider_can_cancel_booking[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($provider_can_cancel_booking[0]['key']))}}')"
-                                                        >
-                                                        <span class="switcher_control"></span>
-                                                    </label>
                                                 </div>
+
+                                                <div class="col-md-6 col-12 mb-30">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span
+                                                                class="text-capitalize">{{translate($provider_can_edit_booking[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($provider_can_edit_booking[0]['info_message'] ?? '')}}"
+                                                            >info</i>
+                                                        </div>
+                                                        <label class="switcher">
+                                                            @php($value = $data_values->where('key_name', $provider_can_edit_booking[0]['key'])?->first()?->live_values ?? null)
+                                                            <input class="switcher_input"
+                                                                   id="{{$provider_can_edit_booking[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$provider_can_edit_booking[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$provider_can_edit_booking[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($provider_can_edit_booking[0]['key']))}}')"
+                                                            >
+                                                            <span class="switcher_control"></span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6 col-12 mb-30">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span
+                                                                class="text-capitalize">{{translate($suspend_on_exceed_cash_limit[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($suspend_on_exceed_cash_limit[0]['info_message'] ?? '')}}"
+                                                            >info</i>
+                                                        </div>
+                                                        <label class="switcher">
+                                                            @php($value = $data_values->where('key_name', $suspend_on_exceed_cash_limit[0]['key'])?->first()?->live_values ?? null)
+                                                            <input class="switcher_input"
+                                                                   id="{{$suspend_on_exceed_cash_limit[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$suspend_on_exceed_cash_limit[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$suspend_on_exceed_cash_limit[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($suspend_on_exceed_cash_limit[0]['key']))}}')"
+                                                            >
+                                                            <span class="switcher_control"></span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6 col-12 mb-30">
+                                                    @php($value=$data_values->where('key_name','max_cash_in_hand_limit_provider')->first())
+                                                    <div class="form-floating">
+                                                        <input type="number" class="form-control" name="max_cash_in_hand_limit_provider"
+                                                               min="0" step="any" value="{{$value->live_values??''}}">
+                                                        <label class="mb-1">{{translate('Maximum Cash in Hand Limit')}} ({{currency_symbol()}})</label>
+                                                            <i class="material-symbols-outlined" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate('Define the maximum amount of ‘Cash in Hand’ a provider is allowed to keep. If the maximum limit is exceeded, the provider will be suspended and will not receive any service requests. ')}}"
+                                                            >info</i>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6 col-12 mb-30">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span
+                                                                class="text-capitalize">{{translate($provider_self_registration[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($provider_self_registration[0]['info_message'] ?? '')}}"
+                                                            >info</i>
+                                                        </div>
+                                                        <label class="switcher">
+                                                            @php($value = $data_values->where('key_name', $provider_self_registration[0]['key'])?->first()?->live_values ?? null)
+                                                            <input class="switcher_input"
+                                                                   id="{{$provider_self_registration[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$provider_self_registration[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$provider_self_registration[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($provider_self_registration[0]['key']))}}')"
+                                                            >
+                                                            <span class="switcher_control"></span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6 col-12 mb-30">
+                                                    <div class="border p-3 rounded d-flex justify-content-between">
+                                                        <div>
+                                                            <span
+                                                                    class="text-capitalize">{{translate($provider_self_delete[0]['title'])}}</span>
+                                                            <i class="material-icons px-1" data-bs-toggle="tooltip"
+                                                               data-bs-placement="top"
+                                                               title="{{translate($provider_self_delete[0]['info_message'] ?? '')}}"
+                                                            >info</i>
+                                                        </div>
+                                                        <label class="switcher">
+                                                            @php($value = $data_values->where('key_name', $provider_self_delete[0]['key'])?->first()?->live_values ?? null)
+                                                            <input class="switcher_input"
+                                                                   id="{{$provider_self_delete[0]['key']}}"
+                                                                   type="checkbox"
+                                                                   name="{{$provider_self_delete[0]['key']}}"
+                                                                   value="1" {{$value ? 'checked' : ''}}
+                                                                   onclick="switch_alert('{{$provider_self_delete[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($provider_self_delete[0]['key']))}}')"
+                                                            >
+                                                            <span class="switcher_control"></span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+
                                             </div>
 
-                                            <div class="col-md-6 col-12 mb-30">
-                                                <div class="border p-3 rounded d-flex justify-content-between">
-                                                    <div>
-                                                        <span class="text-capitalize">{{translate($provider_can_edit_booking[0]['title'])}}</span>
-                                                        <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                            title="{{translate($provider_can_edit_booking[0]['info_message'] ?? '')}}"
-                                                        >info</i>
-                                                    </div>
-                                                    <label class="switcher">
-                                                        @php($value = $data_values->where('key_name', $provider_can_edit_booking[0]['key'])?->first()?->live_values ?? null)
-                                                        <input class="switcher_input" id="{{$provider_can_edit_booking[0]['key']}}" type="checkbox" name="{{$provider_can_edit_booking[0]['key']}}"
-                                                                value="1" {{$value ? 'checked' : ''}}
-                                                                onclick="switch_alert('{{$provider_can_edit_booking[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($provider_can_edit_booking[0]['key']))}}')"
-                                                        >
-                                                        <span class="switcher_control"></span>
-                                                    </label>
-                                                </div>
+                                            <div class="d-flex gap-2 justify-content-end mt-4">
+                                                <button type="reset" class="btn btn-secondary">{{translate('reset')}}
+                                                </button>
+                                                <button type="submit" class="btn btn--primary">{{translate('update')}}
+                                                </button>
                                             </div>
-
-                                            <div class="col-md-6 col-12 mb-30">
-                                                <div class="border p-3 rounded d-flex justify-content-between">
-                                                    <div>
-                                                        <span class="text-capitalize">{{translate($provider_self_registration[0]['title'])}}</span>
-                                                        <i class="material-icons px-1" data-bs-toggle="tooltip" data-bs-placement="top"
-                                                            title="{{translate($provider_self_registration[0]['info_message'] ?? '')}}"
-                                                        >info</i>
-                                                    </div>
-                                                    <label class="switcher">
-                                                        @php($value = $data_values->where('key_name', $provider_self_registration[0]['key'])?->first()?->live_values ?? null)
-                                                        <input class="switcher_input" id="{{$provider_self_registration[0]['key']}}" type="checkbox" name="{{$provider_self_registration[0]['key']}}"
-                                                                value="1" {{$value ? 'checked' : ''}}
-                                                                onclick="switch_alert('{{$provider_self_registration[0]['key']}}', $(this).is(':checked')===true?1:0,  'Want to change the status of {{ucfirst(translate($provider_self_registration[0]['key']))}}')"
-                                                        >
-                                                        <span class="switcher_control"></span>
-                                                    </label>
-                                                </div>
-                                            </div>
-
-                                        </div>
-
-                                        <div class="d-flex gap-2 justify-content-end mt-4">
-                                            <button type="reset" class="btn btn-secondary">{{translate('reset')}}
-                                            </button>
-                                            <button type="submit" class="btn btn--primary">{{translate('update')}}
-                                            </button>
-                                        </div>
-                                    </form>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
                     @endif
 
                     <!-- OTP & Login Setup -->
@@ -1173,23 +1549,26 @@
                                  id="business-info">
                                 <div class="card">
                                     <div class="card-body p-30">
-                                        <form action="{{route('admin.business-settings.set-otp-login-information')}}" method="POST">
+                                        <form action="{{route('admin.business-settings.set-otp-login-information')}}"
+                                              method="POST">
                                             @csrf
                                             @method('PUT')
                                             <div class="row g-4">
                                                 <!-- temporary_login_block_time -->
                                                 <div class="col-md-6 col-12">
                                                     <div class="form-floating">
-                                                        <input class="form-control remove-spin" name="temporary_login_block_time"
+                                                        <input class="form-control remove-spin"
+                                                               name="temporary_login_block_time"
                                                                placeholder="{{translate('Temporary Login Block Time')}} *"
                                                                type="number" min="0" required
                                                                value="{{$data_values->where('key_name', 'temporary_login_block_time')->first()->live_values ?? ''}}"
-                                                               >
-                                                        <label>{{translate('Temporary Login Block Time')}}* <small class="text-danger">({{translate('In Second')}})</small>
+                                                        >
+                                                        <label>{{translate('Temporary Login Block Time')}}* <small
+                                                                class="text-danger">({{translate('In Second')}})</small>
                                                         </label>
 
                                                         <span class="material-icons" data-bs-toggle="tooltip"
-                                                               title="{{ translate('Temporary login block time refers to a security measure implemented by systems to restrict access for a specified period of time for wrong Password submission.') }}">info</span>
+                                                              title="{{ translate('Temporary login block time refers to a security measure implemented by systems to restrict access for a specified period of time for wrong Password submission.') }}">info</span>
                                                     </div>
                                                 </div>
 
@@ -1200,26 +1579,28 @@
                                                                placeholder="{{translate('Maximum Login Hit')}} *"
                                                                type="number" min="0" required
                                                                value="{{$data_values->where('key_name', 'maximum_login_hit')->first()->live_values ?? ''}}"
-                                                               >
+                                                        >
                                                         <label>{{translate('Maximum Login Hit')}}* </label>
 
                                                         <span class="material-icons" data-bs-toggle="tooltip"
-                                                               title="{{ translate('The maximum login hit is a measure of how many times a user can submit password within a time.') }}">info</span>
+                                                              title="{{ translate('The maximum login hit is a measure of how many times a user can submit password within a time.') }}">info</span>
                                                     </div>
                                                 </div>
 
                                                 <!-- temporary_otp_block_time -->
                                                 <div class="col-md-6 col-12">
                                                     <div class="form-floating">
-                                                        <input class="form-control remove-spin" name="temporary_otp_block_time"
+                                                        <input class="form-control remove-spin"
+                                                               name="temporary_otp_block_time"
                                                                placeholder="{{translate('Temporary OTP Block Time')}} *"
                                                                type="number" min="0" required
                                                                value="{{$data_values->where('key_name', 'temporary_otp_block_time')->first()->live_values ?? ''}}"
-                                                               >
-                                                        <label>{{translate('Temporary OTP Block Time')}}* <small class="text-danger">({{translate('In Second')}})</small></label>
+                                                        >
+                                                        <label>{{translate('Temporary OTP Block Time')}}* <small
+                                                                class="text-danger">({{translate('In Second')}})</small></label>
 
                                                         <span class="material-icons" data-bs-toggle="tooltip"
-                                                               title="{{ translate('Temporary OTP block time refers to a security measure implemented by systems to restrict access to OTP service for a specified period of time for wrong OTP submission.') }}">info</span>
+                                                              title="{{ translate('Temporary OTP block time refers to a security measure implemented by systems to restrict access to OTP service for a specified period of time for wrong OTP submission.') }}">info</span>
                                                     </div>
                                                 </div>
 
@@ -1233,7 +1614,7 @@
                                                         <label>{{translate('Maximum OTP Hit')}} *</label>
 
                                                         <span class="material-icons" data-bs-toggle="tooltip"
-                                                               title="{{ translate('The maximum OTP hit is a measure of how many times a specific one-time password has been generated and used within a time.') }}">info</span>
+                                                              title="{{ translate('The maximum OTP hit is a measure of how many times a specific one-time password has been generated and used within a time.') }}">info</span>
                                                     </div>
                                                 </div>
 
@@ -1244,12 +1625,13 @@
                                                                placeholder="{{translate('OTP Resend Time')}} *"
                                                                type="number" min="0" required
                                                                value="{{$data_values->where('key_name', 'otp_resend_time')->first()->live_values ?? ''}}"
-                                                               >
+                                                        >
 
-                                                        <label>{{translate('OTP Resend Time')}}* <small class="text-danger">({{translate('In Second')}})</small></label>
+                                                        <label>{{translate('OTP Resend Time')}}* <small
+                                                                class="text-danger">({{translate('In Second')}})</small></label>
 
                                                         <span class="material-icons" data-bs-toggle="tooltip"
-                                                               title="{{ translate('If the user fails to get the OTP within a certain time, user can request a resend.') }}">info</span>
+                                                              title="{{ translate('If the user fails to get the OTP within a certain time, user can request a resend.') }}">info</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1361,11 +1743,11 @@
                 error: function (jqXHR, exception) {
                     console.log(jqXHR);
                     if (jqXHR.responseJSON && jqXHR.responseJSON.errors && jqXHR.responseJSON.errors.length > 0) {
-                        var errorMessages = jqXHR.responseJSON.errors.map(function(error) {
+                        var errorMessages = jqXHR.responseJSON.errors.map(function (error) {
                             return error.message;
                         });
 
-                        errorMessages.forEach(function(errorMessage) {
+                        errorMessages.forEach(function (errorMessage) {
                             toastr.error(errorMessage);
                         });
                     } else {
@@ -1406,7 +1788,7 @@
                         success: function (response) {
                             toastr.success('{{translate('successfully_updated')}}');
 
-                            if(will_reload) {
+                            if (will_reload) {
                                 setTimeout(() => {
                                     document.location.reload();
                                 }, 3000);
@@ -1422,7 +1804,7 @@
     </script>
 
     <script>
-        $(window).on('load', function() {
+        $(window).on('load', function () {
             //DISCOUNT SECTION
             $("#admin-select__discount, #provider-select__discount").on('click', function (e) {
                 $("#bearer-section__discount").addClass('d-none');
@@ -1432,15 +1814,15 @@
                 $("#bearer-section__discount").removeClass('d-none');
             })
 
-            $( "#admin_percentage__discount" ).keyup(function(e) {
-                if(this.value >=0 && this.value <= 100) {
-                    $( "#provider_percentage__discount" ).val( (100-this.value) );
+            $("#admin_percentage__discount").keyup(function (e) {
+                if (this.value >= 0 && this.value <= 100) {
+                    $("#provider_percentage__discount").val((100 - this.value));
                 }
             });
 
-            $( "#provider_percentage__discount" ).keyup(function(e) {
-                if(this.value >=0 && this.value <= 100) {
-                    $( "#admin_percentage__discount" ).val( (100-this.value) );
+            $("#provider_percentage__discount").keyup(function (e) {
+                if (this.value >= 0 && this.value <= 100) {
+                    $("#admin_percentage__discount").val((100 - this.value));
                 }
             });
 
@@ -1453,15 +1835,15 @@
                 $("#bearer-section__campaign").removeClass('d-none');
             })
 
-            $( "#admin_percentage__campaign" ).keyup(function(e) {
-                if(this.value >=0 && this.value <= 100) {
-                    $( "#provider_percentage__campaign" ).val( (100-this.value) );
+            $("#admin_percentage__campaign").keyup(function (e) {
+                if (this.value >= 0 && this.value <= 100) {
+                    $("#provider_percentage__campaign").val((100 - this.value));
                 }
             });
 
-            $( "#provider_percentage__campaign" ).keyup(function(e) {
-                if(this.value >=0 && this.value <= 100) {
-                    $( "#admin_percentage__campaign" ).val( (100-this.value) );
+            $("#provider_percentage__campaign").keyup(function (e) {
+                if (this.value >= 0 && this.value <= 100) {
+                    $("#admin_percentage__campaign").val((100 - this.value));
                 }
             });
 
@@ -1474,26 +1856,26 @@
                 $("#bearer-section__coupon").removeClass('d-none');
             })
 
-            $( "#admin_percentage__coupon" ).keyup(function(e) {
-                if(this.value >=0 && this.value <= 100) {
-                    $( "#provider_percentage__coupon" ).val( (100-this.value) );
+            $("#admin_percentage__coupon").keyup(function (e) {
+                if (this.value >= 0 && this.value <= 100) {
+                    $("#provider_percentage__coupon").val((100 - this.value));
                 }
             });
 
-            $( "#provider_percentage__coupon" ).keyup(function(e) {
-                if(this.value >=0 && this.value <= 100) {
-                    $( "#admin_percentage__coupon" ).val( (100-this.value) );
+            $("#provider_percentage__coupon").keyup(function (e) {
+                if (this.value >= 0 && this.value <= 100) {
+                    $("#admin_percentage__coupon").val((100 - this.value));
                 }
             });
         })
     </script>
 
     <script>
-        $(document).ready(function($) {
+        $(document).ready(function ($) {
             $("#phone_verification").on('change', function () {
                 const phoneVerification = $(this).is(':checked') === true ? 1 : 0;
 
-                if(phoneVerification === 1) {
+                if (phoneVerification === 1) {
                     $("#email_verification").prop('checked', false);
                 }
             });
@@ -1501,7 +1883,7 @@
             $("#email_verification").on('change', function () {
                 const emailVerification = $(this).is(':checked') === true ? 1 : 0;
 
-                if(emailVerification === 1) {
+                if (emailVerification === 1) {
                     $("#phone_verification").prop('checked', false);
                 }
             });

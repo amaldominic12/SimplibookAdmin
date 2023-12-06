@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Modules\BusinessSettingsModule\Entities\Translation;
 use Modules\CategoryManagement\Entities\Category;
 use Modules\PromotionManagement\Entities\Coupon;
 use Modules\PromotionManagement\Entities\CouponCustomer;
@@ -99,6 +100,7 @@ class CouponController extends Controller
             'coupon_code' => 'required|unique:coupons',
             'discount_type' => 'required|in:category,service,zone,mixed',
             'discount_title' => 'required',
+            'discount_title.0' => 'required',
             'coupon_type' => 'required|in:' . implode(',', array_keys(COUPON_TYPES)),
             'discount_amount' => 'required|numeric',
             'discount_amount_type' => 'required|in:percent,amount',
@@ -115,7 +117,7 @@ class CouponController extends Controller
         DB::transaction(function () use ($request) {
             $discount = $this->discount;
             $discount->discount_type = $request['discount_type'];
-            $discount->discount_title = $request['discount_title'];
+            $discount->discount_title = $request->discount_title[array_search('default', $request->lang)];
             $discount->discount_amount = $request['discount_amount'];
             $discount->discount_amount_type = $request['discount_amount_type'];
             $discount->min_purchase = $request['min_purchase'];
@@ -163,6 +165,38 @@ class CouponController extends Controller
                 }
                 $coupon->coupon_customers()->createmany($data);
             }
+
+            $default_lang = str_replace('_', '-', app()->getLocale());
+
+            foreach($request->lang as $index=>$key)
+            {
+                if($default_lang == $key && !($request->discount_title[$index])){
+                    if($key != 'default')
+                    {
+                        Translation::updateOrInsert(
+                            [
+                                'translationable_type' => 'Modules\PromotionManagement\Entities\Discount',
+                                'translationable_id'    => $discount->id,
+                                'locale'                => $key,
+                                'key'                   => 'discount_title'],
+                            ['value'                 => $discount->discount_title]
+                        );
+                    }
+                }else{
+
+                    if($request->discount_title[$index] && $key != 'default')
+                    {
+                        Translation::updateOrInsert(
+                            [
+                                'translationable_type' => 'Modules\PromotionManagement\Entities\Discount',
+                                'translationable_id'    => $discount->id,
+                                'locale'                => $key,
+                                'key'                   => 'discount_title'],
+                            ['value'                 => $request->discount_title[$index]]
+                        );
+                    }
+                }
+            }
         });
 
         Toastr::success(DEFAULT_STORE_200['message']);
@@ -177,12 +211,13 @@ class CouponController extends Controller
     public function edit(string $id): View|Factory|Application
     {
         $coupon = $this->coupon->with(['discount', 'discount.category_types', 'discount.service_types', 'discount.zone_types', 'coupon_customers'])->where('id', $id)->first();
+        $discount = $this->discount->where('id', $coupon->discount_id)->withoutGlobalScope('translate')->first();
         $categories = $this->category->ofStatus(1)->ofType('main')->latest()->get();
         $zones = $this->zone->ofStatus(1)->latest()->get();
         $services = $this->service->active()->latest()->get();
         $customers = $this->customer->ofStatus(1)->get();
 
-        return view('promotionmanagement::admin.coupons.edit', compact('categories', 'zones', 'services', 'coupon', 'customers'));
+        return view('promotionmanagement::admin.coupons.edit', compact('categories', 'zones', 'services', 'coupon', 'customers', 'discount'));
     }
 
     /**
@@ -215,7 +250,7 @@ class CouponController extends Controller
 
             $discount = $this->discountQuery->where('id', $coupon['discount_id'])->first();
             $discount->discount_type = $request['discount_type'];
-            $discount->discount_title = $request['discount_title'];
+            $discount->discount_title = $request->discount_title[array_search('default', $request->lang)];
             $discount->discount_amount = $request['discount_amount'];
             $discount->discount_amount_type = $request['discount_amount_type'];
             $discount->min_purchase = $request['min_purchase'];
@@ -267,6 +302,38 @@ class CouponController extends Controller
                 $this->coupon_customer->where('coupon_id', $coupon->id)->delete();
                 $coupon->coupon_customers()->createmany($data);
             }
+
+            $default_lang = str_replace('_', '-', app()->getLocale());
+
+            foreach($request->lang as $index=>$key)
+            {
+                if($default_lang == $key && !($request->discount_title[$index])){
+                    if($key != 'default')
+                    {
+                        Translation::updateOrInsert(
+                            [
+                                'translationable_type' => 'Modules\PromotionManagement\Entities\Discount',
+                                'translationable_id'    => $discount->id,
+                                'locale'                => $key,
+                                'key'                   => 'discount_title'],
+                            ['value'                 => $coupon->discount_title]
+                        );
+                    }
+                }else{
+
+                    if($request->discount_title[$index] && $key != 'default')
+                    {
+                        Translation::updateOrInsert(
+                            [
+                                'translationable_type' => 'Modules\PromotionManagement\Entities\Discount',
+                                'translationable_id'    => $discount->id,
+                                'locale'                => $key,
+                                'key'                   => 'discount_title'],
+                            ['value'                 => $request->discount_title[$index]]
+                        );
+                    }
+                }
+            }
         });
 
 
@@ -283,7 +350,8 @@ class CouponController extends Controller
     public function destroy(Request $request, $id): RedirectResponse
     {
         $coupon = $this->coupon->where('id', $id)->first();
-        $this->discount->where('id', $coupon['discount_id'])->delete();
+        $this->discount->where('id', $coupon['discount_id'])->translations()->withoutGlobalScope('translate')->delete();
+        $this->discount->where('id', $coupon['discount_id'])->withoutGlobalScope('translate')->delete();
         $this->discountType->where('discount_id', $coupon['discount_id'])->delete();
         $this->coupon->where('id', $id)->delete();
         Toastr::success(DEFAULT_DELETE_200['message']);

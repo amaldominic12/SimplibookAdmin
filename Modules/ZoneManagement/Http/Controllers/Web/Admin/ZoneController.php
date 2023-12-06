@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Modules\BusinessSettingsModule\Entities\Translation;
 use Modules\ZoneManagement\Entities\Zone;
 use Grimzy\LaravelMysqlSpatial\Types\Point;
 use Grimzy\LaravelMysqlSpatial\Types\Polygon;
@@ -41,7 +42,7 @@ class ZoneController extends Controller
                 'lat' => $data ? $data->latitude : '23.757989',
                 'lng' => $data ? $data->longitude : '90.360587'
             ];
-            session()->put('location',$location);
+            session()->put('location', $location);
         }
         $search = $request['search'];
         $query_param = $search ? ['search' => $request['search']] : '';
@@ -53,6 +54,7 @@ class ZoneController extends Controller
                     $query->orWhere('name', 'LIKE', '%' . $key . '%');
                 }
             })
+            ->withoutGlobalScope('translate')
             ->latest()->paginate(pagination_limit())->appends($query_param);
         return view('zonemanagement::admin.create', compact('zones', 'search'));
     }
@@ -66,9 +68,12 @@ class ZoneController extends Controller
     {
         $request->validate([
             'name' => 'required|unique:zones|max:191',
+            'name.0' => 'required',
             'coordinates' => 'required',
+        ],
+        [
+            'name.0.required' => translate('default_name_is_required'),
         ]);
-
         $value = $request->coordinates;
         foreach (explode('),(', trim($value, '()')) as $index => $single_array) {
             if ($index == 0) {
@@ -81,9 +86,39 @@ class ZoneController extends Controller
 
         DB::transaction(function () use ($polygon, $request) {
             $zone = $this->zone;
-            $zone->name = $request->name;
+            $zone->name = $request->name[array_search('default', $request->lang)];
             $zone->coordinates = new Polygon([new LineString($polygon)]);
             $zone->save();
+
+            $default_lang = str_replace('_', '-', app()->getLocale());
+
+            foreach ($request->lang as $index => $key) {
+                if ($default_lang == $key && !($request->name[$index])) {
+                    if ($key != 'default') {
+                        Translation::updateOrInsert(
+                            [
+                                'translationable_type' => 'Modules\ZoneManagement\Entities\Zone',
+                                'translationable_id' => $zone->id,
+                                'locale' => $key,
+                                'key' => 'zone_name'],
+                            ['value' => $zone->name]
+                        );
+                    }
+                } else {
+
+                    if ($request->name[$index] && $key != 'default') {
+                        Translation::updateOrInsert(
+                            [
+                                'translationable_type' => 'Modules\ZoneManagement\Entities\Zone',
+                                'translationable_id' => $zone->id,
+                                'locale' => $key,
+                                'key' => 'zone_name'],
+                            ['value' => $request->name[$index]]
+                        );
+                    }
+                }
+            }
+
         });
 
         Toastr::success(ZONE_STORE_200['message']);
@@ -98,7 +133,7 @@ class ZoneController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $zone = $this->zone->where('id', $id)->first();
+        $zone = $this->zone->withoutGlobalScope('translate')->where('id', $id)->first();
         if (isset($zone)) {
             return response()->json(response_formatter(DEFAULT_200, $zone), 200);
         }
@@ -106,9 +141,9 @@ class ZoneController extends Controller
     }
 
 
-    public function edit(string $id): View|Factory|Application|RedirectResponse
+    public function edit(string $id)
     {
-        $zone = Zone::selectRaw("*,ST_AsText(ST_Centroid(`coordinates`)) as center")->find($id);
+        $zone = Zone::selectRaw("*,ST_AsText(ST_Centroid(`coordinates`)) as center")->withoutGlobalScope('translate')->find($id);
 
         if (isset($zone)) {
             $current_zone = format_coordinates($zone->coordinates);
@@ -124,7 +159,7 @@ class ZoneController extends Controller
 
     public function get_active_zones($id): JsonResponse
     {
-        $all_zones = Zone::where('id', '<>', $id)->where('is_active', 1)->get();
+        $all_zones = Zone::where('id', '<>', $id)->where('is_active', 1)->withoutGlobalScope('translate')->get();
         $all_zone_data = [];
 
         foreach ($all_zones as $item) {
@@ -146,8 +181,8 @@ class ZoneController extends Controller
      */
     public function status_update(Request $request, $id): JsonResponse
     {
-        $zone = $this->zone->where('id', $id)->first();
-        $this->zone->where('id', $id)->update(['is_active' => !$zone->is_active]);
+        $zone = $this->zone->where('id', $id)->withoutGlobalScope('translate')->first();
+        $this->zone->where('id', $id)->withoutGlobalScope('translate')->update(['is_active' => !$zone->is_active]);
 
         return response()->json(DEFAULT_STATUS_UPDATE_200, 200);
     }
@@ -161,9 +196,13 @@ class ZoneController extends Controller
     public function update(Request $request, string $id): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|max:191',
+            'name' => 'required',
+            'name.0' => 'required',
             'coordinates' => 'required',
-        ]);
+        ],
+            [
+                'name.0.required' => translate('default_name_is_required'),
+            ]);
 
         $value = $request->coordinates;
         foreach (explode('),(', trim($value, '()')) as $index => $single_array) {
@@ -175,16 +214,46 @@ class ZoneController extends Controller
         }
         $polygon[] = new Point($lastcord[0], $lastcord[1]);
 
-        $zone = $this->zone->where('id', $id)->first();
+        $zone = $this->zone->where('id', $id)->withoutGlobalScope('translate')->first();
 
         if (!isset($zone)) {
             Toastr::success(ZONE_404['message']);
             return back();
         }
 
-        $zone->name = $request->name;
+        $zone->name = $request->name[array_search('default', $request->lang)];
         $zone->coordinates = new Polygon([new LineString($polygon)]);
         $zone->save();
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request->name[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ZoneManagement\Entities\Zone',
+                            'translationable_id' => $zone->id,
+                            'locale' => $key,
+                            'key' => 'zone_name'],
+                        ['value' => $zone->name]
+                    );
+                }
+            } else {
+
+                if ($request->name[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ZoneManagement\Entities\Zone',
+                            'translationable_id' => $zone->id,
+                            'locale' => $key,
+                            'key' => 'zone_name'],
+                        ['value' => $request->name[$index]]
+                    );
+                }
+            }
+        }
+
 
         Toastr::success(ZONE_UPDATE_200['message']);
         return back();
@@ -198,7 +267,9 @@ class ZoneController extends Controller
      */
     public function destroy(Request $request, $id): RedirectResponse
     {
-        $this->zone->where('id', $id)->delete();
+        $zone = $this->zone->where('id', $id)->withoutGlobalScope('translate')->first();
+        $zone->translations()->delete();
+        $zone->delete();
         Toastr::success(ZONE_DESTROY_200['message']);
         return back();
     }
@@ -210,7 +281,7 @@ class ZoneController extends Controller
      */
     public function download(Request $request): string|StreamedResponse
     {
-        $items = $this->zone->withCount(['providers', 'categories'])
+        $items = $this->zone->withoutGlobalScope('translate')->withCount(['providers', 'categories'])
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search']);
                 foreach ($keys as $key) {
@@ -218,7 +289,7 @@ class ZoneController extends Controller
                 }
             })
             ->latest()->get();
-        return (new FastExcel($items))->download(time().'-file.xlsx');
+        return (new FastExcel($items))->download(time() . '-file.xlsx');
     }
 
 }

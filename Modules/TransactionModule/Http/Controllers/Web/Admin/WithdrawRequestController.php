@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
+use Modules\ProviderManagement\Entities\Provider;
 use Modules\ProviderManagement\Entities\WithdrawRequest;
 use Modules\TransactionModule\Entities\Account;
 use Modules\TransactionModule\Entities\Transaction;
@@ -156,7 +157,7 @@ class WithdrawRequestController extends Controller
 
         foreach ($field_array as $item) {
             if(!array_key_exists($item, $collections->first())) {
-                Toastr::error(translate($item) . translate(' must not be empty.'));
+                Toastr::error(translate($item) . ' ' . translate('must not be empty.'));
                 return back();
             }
         }
@@ -209,7 +210,6 @@ class WithdrawRequestController extends Controller
             'note' => 'max:255',
         ])->validate();
 
-
         $withdraw_request = $this->withdraw_request::find($id);
 
         if ($request['status'] == 'approved') {
@@ -220,6 +220,17 @@ class WithdrawRequestController extends Controller
             $withdraw_request->admin_note = $request->note;
             $withdraw_request->is_paid = 1;
             $withdraw_request->save();
+
+
+            $user = $this->user->where('id', $withdraw_request['user_id'])->first();
+
+            $title = get_push_notification_message('widthdraw_request_approve', 'provider_notification', $user?->current_language_key);
+            if ($title && $user->fcm_token) {
+                $data_info = [
+                    'provider_name' => $user->provider->company_name,
+                ];
+                device_notification($user->fcm_token, $title, null, null, null, 'withdraw', null, $user->id, $data_info);
+            }
 
         } else if ($request['status'] == 'settled') {
             $withdraw_request->request_status = 'settled';
@@ -235,6 +246,15 @@ class WithdrawRequestController extends Controller
             $withdraw_request->admin_note = $request->note;
             $withdraw_request->is_paid = 0;
             $withdraw_request->save();
+
+            $user = $this->user->where('id', $withdraw_request['user_id'])->first();
+            $data_info = [
+                'provider_name' => $user->provider->company_name,
+            ];
+            $title = get_push_notification_message('widthdraw_request_deny', 'provider_notification', $user?->current_language_key);
+            if ($title && $user->fcm_token) {
+                device_notification($user->fcm_token, $title, null, null, null, 'withdraw', null, $user->id, $data_info);
+            }
 
         }
 

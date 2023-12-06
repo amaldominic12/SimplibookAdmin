@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\BusinessSettingsModule\Entities\Translation;
 use Modules\CategoryManagement\Entities\Category;
 use Modules\ServiceManagement\Entities\Variation;
 use Modules\ZoneManagement\Entities\Zone;
@@ -40,7 +41,9 @@ class CategoryController extends Controller
         $status = $request->has('status') ? $request['status'] : 'all';
         $query_param = ['search' => $search, 'status' => $status];
 
-        $categories = $this->category->withCount(['children', 'zones'])
+        $categories = $this->category->withCount(['children', 'zones' => function($query){
+            $query->withoutGlobalScope('translate');
+        }])
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search']);
                 foreach ($keys as $key) {
@@ -53,7 +56,7 @@ class CategoryController extends Controller
             ->ofType('main')
             ->latest()->paginate(pagination_limit())->appends($query_param);
 
-        $zones = $this->zone->where('is_active', 1)->get();
+        $zones = $this->zone->where('is_active', 1)->withoutGlobalScope('translate')->get();
 
         return view('categorymanagement::admin.create', compact('categories', 'zones', 'search', 'status'));
     }
@@ -67,18 +70,58 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|unique:categories',
+            'name.0' => 'required',
             'zone_ids' => 'required|array',
             'image' => 'required|image|mimes:jpeg,jpg,png,gif|max:10240',
+        ],
+        [
+            'name.0.required'=>translate('default_name_is_required'),
         ]);
 
         $category = $this->category;
-        $category->name = $request->name;
+        $category->name = $request->name[array_search('default', $request->lang)];
         $category->image = file_uploader('category/', 'png', $request->file('image'));
         $category->parent_id = 0;
         $category->position = 1;
         $category->description = null;
         $category->save();
         $category->zones()->sync($request->zone_ids);
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        $data = [];
+
+        foreach($request->lang as $index=>$key)
+        {
+            if($default_lang == $key && !($request->name[$index])){
+                if($key != 'default')
+                {
+                    $data[] = array(
+                        'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                        'translationable_id' => $category->id,
+                        'locale' => $key,
+                        'key' => 'name',
+                        'value' => $category->name,
+                    );
+                }
+            }else{
+
+                if($request->name[$index] && $key != 'default')
+                {
+                    $data[] = array(
+                        'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                        'translationable_id' => $category->id,
+                        'locale' => $key,
+                        'key' => 'name',
+                        'value' => $request->name[$index],
+                    );
+                }
+            }
+        }
+        if(count($data))
+        {
+            Translation::insert($data);
+        }
 
         Toastr::success(CATEGORY_STORE_200['message']);
         return back();
@@ -91,9 +134,11 @@ class CategoryController extends Controller
      */
     public function edit(string $id): View|Factory|Application|RedirectResponse
     {
-        $category = $this->category->with(['zones'])->ofType('main')->where('id', $id)->first();
+        $category = $this->category->withoutGlobalScope('translate')->with(['zones' => function($query){
+            $query->withoutGlobalScope('translate');
+        }])->ofType('main')->where('id', $id)->first();
         if (isset($category)) {
-            $zones = $this->zone->where('is_active', 1)->get();
+            $zones = $this->zone->where('is_active', 1)->withoutGlobalScope('translate')->get();
             return view('categorymanagement::admin.edit', compact('category', 'zones'));
         }
 
@@ -111,14 +156,18 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|unique:categories,name,' . $id,
+            'name.0' => 'required',
             'zone_ids' => 'required|array',
+        ],
+        [
+            'name.0.required'=>translate('default_name_is_required'),
         ]);
 
         $category = $this->category->ofType('main')->where('id', $id)->first();
         if (!$category) {
             return response()->json(response_formatter(CATEGORY_204), 204);
         }
-        $category->name = $request->name;
+        $category->name = $request->name[array_search('default', $request->lang)];
         if ($request->has('image')) {
             $category->image = file_uploader('category/', 'png', $request->file('image'), $category->image);
         }
@@ -128,6 +177,38 @@ class CategoryController extends Controller
         $category->save();
 
         $category->zones()->sync($request->zone_ids);
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach($request->lang as $index=>$key)
+        {
+            if($default_lang == $key && !($request->name[$index])){
+                if($key != 'default')
+                {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                            'translationable_id'    => $category->id,
+                            'locale'                => $key,
+                            'key'                   => 'name'],
+                        ['value'                 => $category->name]
+                    );
+                }
+            }else{
+
+                if($request->name[$index] && $key != 'default')
+                {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                            'translationable_id'    => $category->id,
+                            'locale'                => $key,
+                            'key'                   => 'name'],
+                        ['value'                 => $request->name[$index]]
+                    );
+                }
+            }
+        }
 
         Toastr::success(CATEGORY_UPDATE_200['message']);
         return back();
@@ -145,6 +226,7 @@ class CategoryController extends Controller
         if (isset($category)) {
             file_remover('category/', $category->image);
             $category->zones()->sync([]);
+            $category->translations()->delete();
             $category->delete();
             Toastr::success(CATEGORY_DESTROY_200['message']);
             return back();

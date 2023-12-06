@@ -47,19 +47,22 @@
                                         @if($provider_can_edit_booking && in_array($booking['booking_status'], ['accepted', 'ongoing']) && $booking->booking_partial_payments->isEmpty())
                                             <button class="btn btn--primary" data-bs-toggle="modal"
                                                     data-bs-target="#serviceUpdateModal--{{$booking['id']}}"
-                                                    data-toggle="tooltip" title="{{translate('Add or remove services')}}">
-                                                <span class="material-symbols-outlined">edit</span>{{translate('Edit Services')}}
+                                                    data-toggle="tooltip"
+                                                    title="{{translate('Add or remove services')}}">
+                                                <span
+                                                    class="material-symbols-outlined">edit</span>{{translate('Edit Services')}}
                                             </button>
                                         @endif
                                         <a href="{{route('provider.booking.invoice',[$booking->id])}}"
-                                            class="btn btn-primary" target="_blank">
+                                           class="btn btn-primary" target="_blank">
                                             <span class="material-icons">description</span>
                                             {{translate('Invoice')}}
                                         </a>
                                     </div>
                                 </div>
                             </div>
-                            <div class="border-bottom py-3 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                            <div
+                                class="border-bottom py-3 d-flex justify-content-between align-items-center gap-3 flex-wrap">
                                 <div>
                                     <h4 class="mb-2">{{translate('Payment_Method')}}</h4>
                                     <h5 class="c1 mb-2">{{ translate($booking->payment_method) }}</h5>
@@ -77,7 +80,8 @@
 
                                         <!-- partially paid badge -->
                                         @if(!$booking->is_paid && $booking->booking_partial_payments->isNotEmpty())
-                                            <span class="small badge badge-info text-success p-1 fz-10">{{translate('Partially paid')}}</span>
+                                            <span
+                                                class="small badge badge-info text-success p-1 fz-10">{{translate('Partially paid')}}</span>
                                         @endif
                                     </p>
                                     <h5>{{translate('Service_Schedule_Date')}} : <span
@@ -105,11 +109,12 @@
                                                 <div class="d-flex flex-column">
                                                     <div class="d-flex flex-column">
                                                         @if(isset($detail->service))
-                                                        <a href="{{route('provider.service.detail',[$detail->service->id])}}"
-                                                            class="fw-bold">{{Str::limit($detail->service->name, 30)}}</a>
-                                                        <div>{{Str::limit($detail ? $detail->variant_key : '', 50)}}</div>
+                                                            <a href="{{route('provider.service.detail',[$detail->service->id])}}"
+                                                               class="fw-bold">{{Str::limit($detail->service->name, 30)}}</a>
+                                                            <div>{{Str::limit($detail ? $detail->variant_key : '', 50)}}</div>
                                                         @else
-                                                            <span class="badge badge-pill badge-danger">{{translate('Service not available')}}</span>
+                                                            <span
+                                                                class="badge badge-pill badge-danger">{{translate('Service not available')}}</span>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -139,11 +144,13 @@
                                             </tr>
                                             <tr>
                                                 <td>{{translate('Coupon_Discount')}}</td>
-                                                <td>- {{with_currency_symbol($booking->total_coupon_discount_amount)}}</td>
+                                                <td>
+                                                    - {{with_currency_symbol($booking->total_coupon_discount_amount)}}</td>
                                             </tr>
                                             <tr>
                                                 <td>{{translate('Campaign_Discount')}}</td>
-                                                <td>- {{with_currency_symbol($booking->total_campaign_discount_amount)}}</td>
+                                                <td>
+                                                    - {{with_currency_symbol($booking->total_campaign_discount_amount)}}</td>
                                             </tr>
                                             <tr>
                                                 <td>{{translate('Vat_/_Tax')}}</td>
@@ -212,20 +219,24 @@
                         <div class="card-body">
                             <h3 class="c1">Booking Setup</h3>
                             <hr>
-                            <div class="d-flex justify-content-between align-items-center gap-10 form-control" id="payment-status-div">
+                            <div class="d-flex justify-content-between align-items-center gap-10 form-control"
+                                 id="payment-status-div">
                                 <span class="title-color">
                                     Payment Status
                                 </span>
 
                                 <label class="switcher payment-status-text">
-                                    <input class="switcher_input" id="payment_status" onclick="payment_status_change($(this).is(':checked')===true?1:0)" type="checkbox" value="{{$booking['is_paid'] ? '1' : '0'}}" {{$booking['is_paid'] ? 'checked disabled' : ''}}>
+                                    <input class="switcher_input" id="payment_status"
+                                           onclick="payment_status_change($(this).is(':checked')===true?1:0)"
+                                           type="checkbox"
+                                           value="{{$booking['is_paid'] ? '1' : '0'}}" {{$booking['is_paid'] ? 'checked disabled' : ''}}>
                                     <span class="switcher_control"></span>
                                 </label>
                             </div>
 
                             <div class="mt-3">
                                 <select name="order_status" class="status form-select js-select" id="serviceman_assign">
-                                    <option value="no_serviceman">{{translate('--Assign_Serviceman--')}}</option>
+                                    <option value="no_serviceman">--{{translate('Assign_Serviceman')}}--</option>
                                     @foreach($servicemen as $serviceman)
                                         <option
                                             value="{{$serviceman->id}}" {{$booking->serviceman_id == $serviceman->id ? 'selected' : ''}} >
@@ -238,100 +249,122 @@
                             <div class="mt-3">
                                 <select name="order_status" class="status form-select js-select" id="booking_status">
                                     @if($booking->booking_status == 'completed')
-                                    <option value="completed" {{$booking['booking_status'] == 'completed' ? 'selected' : ''}}>{{translate('Completed')}}</option>
-                                @else
-                                    <option value="0">{{translate('--Booking_status--')}}</option>
-                                    @if($booking->booking_status == 'pending')
-                                        <option value="accepted" {{$booking['booking_status'] == 'accepted' ? 'selected' : ''}} >{{translate('Accepted')}}</option>
+                                        <option
+                                            value="completed" {{$booking['booking_status'] == 'completed' ? 'selected' : ''}}>{{translate('Completed')}}</option>
                                     @else
-                                        <option value="ongoing" {{$booking['booking_status'] == 'ongoing' ? 'selected' : ''}}>{{translate('Ongoing')}}</option>
-                                        <option value="completed" {{$booking['booking_status'] == 'completed' ? 'selected' : ''}}>{{translate('Completed')}}</option>
-                                        @if((business_config('provider_can_cancel_booking', 'provider_config'))->live_values)
-                                            <option value="canceled" {{$booking['booking_status'] == 'canceled' ? 'selected' : ''}}>{{translate('Canceled')}}</option>
+                                        <option value="0">--{{translate('Booking_status')}}--</option>
+                                        @if($booking->booking_status == 'pending')
+                                            <option
+                                                value="accepted" {{$booking['booking_status'] == 'accepted' ? 'selected' : ''}} >{{translate('Accepted')}}</option>
+                                        @else
+                                            <option
+                                                value="ongoing" {{$booking['booking_status'] == 'ongoing' ? 'selected' : ''}}>{{translate('Ongoing')}}</option>
+                                            <option
+                                                value="completed" {{$booking['booking_status'] == 'completed' ? 'selected' : ''}}>{{translate('Completed')}}</option>
+                                            @if((business_config('provider_can_cancel_booking', 'provider_config'))->live_values)
+                                                <option
+                                                    value="canceled" {{$booking['booking_status'] == 'canceled' ? 'selected' : ''}}>{{translate('Canceled')}}</option>
+                                            @endif
                                         @endif
                                     @endif
-                                @endif
                                 </select>
                             </div>
 
                             <div class="mt-3" id="change_schedule">
                                 @if(!in_array($booking->booking_status,['ongoing','completed']))
-                                    <input type="datetime-local" class="form-control" name="service_schedule" value="{{$booking->service_schedule}}" id="service_schedule"  onchange="service_schedule_update()">
+                                    <input type="datetime-local" class="form-control" name="service_schedule"
+                                           value="{{$booking->service_schedule}}" id="service_schedule"
+                                           min="<?php echo date('Y-m-d\TH:i'); ?>"
+                                           onchange="service_schedule_update()">
                                 @endif
                             </div>
 
                             <div class="py-3 d-flex flex-column gap-3 mb-2">
-                                <!-- test modal -->
-                                {{-- <div class="c1-light-bg radius-10 py-3 px-4"> --}}
-                                    {{-- <div class="d-flex justify-content-start gap-2">
-                                        <h4 class="mb-2">Modal</h4>
-                                    </div> --}}
-                                    {{-- <button class="btn btn--primary my-5" data-bs-toggle="modal" data-bs-target="#otpModal">open OTP modal</button> --}}
-
-                                        <!-- Upload Picture Modal -->
-                                        <div class="modal fade" id="upload_picture_modal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="upload_picture_modalLabel" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                                            <div class="modal-content">
-                                                <div class="modal-header border-0">
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                <h3 class="text-center mb-4">{{translate('Upload_Picture_Before_Completing_The')}} <br class="d-none d-sm-block"> {{translate('Service')}} ? </h3>
-                                                <form id="uploadPictureForm" name="uploadPictureForm" enctype="multipart/form-data" action="javascript:void(0)">
+                                <!-- Upload Picture Modal -->
+                                <div class="modal fade" id="upload_picture_modal" data-bs-backdrop="static"
+                                     tabindex="-1" aria-labelledby="upload_picture_modalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                        <div class="modal-content">
+                                            <div class="modal-header border-0">
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <h3 class="text-center mb-4">{{translate('Upload_Picture_Before_Completing_The')}}
+                                                    <br class="d-none d-sm-block"> {{translate('Service')}} ? </h3>
+                                                <form id="uploadPictureForm" name="uploadPictureForm"
+                                                      enctype="multipart/form-data" action="javascript:void(0)">
                                                     @csrf
                                                     <div class="d-flex justify-content-center">
                                                         <div class="mx-auto">
-                                                            <div class="d-flex flex-wrap gap-3 __new-coba" id="evidence-photoss"></div>
+                                                            <div class="d-flex flex-wrap gap-3 __new-coba"
+                                                                 id="evidence-photoss"></div>
                                                         </div>
                                                     </div>
                                                     <div class="d-flex gap-4 flex-wrap justify-content-center mt-20">
-                                                        <button type="button" class="btn btn--secondary" id="skip_button">Skip</button>
+                                                        <button type="button" class="btn btn--secondary"
+                                                                id="skip_button">Skip
+                                                        </button>
                                                         <button type="submit" class="btn btn--primary">Save</button>
                                                     </div>
                                                 </form>
-                                                </div>
-                                            </div>
                                             </div>
                                         </div>
-                                         <!-- Otp Modal -->
-                                            <div class="modal fade" id="otpModal" tabindex="-1" data-bs-backdrop="static" aria-labelledby="otpModalLabel" aria-hidden="true">
-                                                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                                                <div class="modal-content">
-                                                    <div class="modal-header border-0">
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <form class="otp-form mx-auto" id="otp_form" name="otp_form" enctype="multipart/form-data" action="javascript:void(0)">
-                                                            <h4 class="text-center mb-5">Please Collect OTP from your customer & Insert Here</h4>
-                                                            <div class="d-flex gap-2 gap-sm-3 align-items-end justify-content-center">
-                                                                <input class="otp-field" type="number" name="otp_field[]" maxlength="1" autofocus>
-                                                                <input class="otp-field" type="number" name="otp_field[]" maxlength="1" autocomplete="off">
-                                                                <input class="otp-field" type="number" name="otp_field[]" maxlength="1" autocomplete="off">
-                                                                <input class="otp-field" type="number" name="otp_field[]" maxlength="1" autocomplete="off">
-                                                                <input class="otp-field" type="number" name="otp_field[]" maxlength="1" autocomplete="off">
-                                                                <input class="otp-field" type="number" name="otp_field[]" maxlength="1" autocomplete="off">
-                                                            </div>
-
-                                                            <!-- Store OTP Value -->
-                                                            <input class="otp-value" type="hidden" name="opt-value">
-
-                                                            <div class="d-flex justify-content-between gap-2 mb-5 mt-30">
-                                                                <span class="text-muted">{{translate('Did not get any OTP')}} ?</span>
-                                                                <span class="text-muted" onclick="resend_otp()" style="cursor: pointer">{{translate('Resend it')}}</span>
-                                                            </div>
-
-                                                            {{-- Buttons --}}
-                                                            <div class="d-flex justify-content-center mb-4">
-                                                                <button type="submit" class="btn btn--primary">{{translate('Submit')}}</button>
-                                                            </div>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                                </div>
-                                            </div>
-                                    <div>
-
                                     </div>
+                                </div>
+                                <!-- Otp Modal -->
+                                <div class="modal fade" id="otpModal" tabindex="-1" data-bs-backdrop="static"
+                                     aria-labelledby="otpModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                        <div class="modal-content">
+                                            <div class="modal-header border-0">
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form class="otp-form mx-auto" id="otp_form" name="otp_form"
+                                                      enctype="multipart/form-data" action="javascript:void(0)">
+                                                    <h4 class="text-center mb-5">Please Collect OTP from your customer &
+                                                        Insert Here</h4>
+                                                    <div
+                                                        class="d-flex gap-2 gap-sm-3 align-items-end justify-content-center">
+                                                        <input class="otp-field" type="number" name="otp_field[]"
+                                                               maxlength="1" autofocus>
+                                                        <input class="otp-field" type="number" name="otp_field[]"
+                                                               maxlength="1" autocomplete="off">
+                                                        <input class="otp-field" type="number" name="otp_field[]"
+                                                               maxlength="1" autocomplete="off">
+                                                        <input class="otp-field" type="number" name="otp_field[]"
+                                                               maxlength="1" autocomplete="off">
+                                                        <input class="otp-field" type="number" name="otp_field[]"
+                                                               maxlength="1" autocomplete="off">
+                                                        <input class="otp-field" type="number" name="otp_field[]"
+                                                               maxlength="1" autocomplete="off">
+                                                    </div>
+
+                                                    <!-- Store OTP Value -->
+                                                    <input class="otp-value" type="hidden" name="opt-value">
+
+                                                    <div class="d-flex justify-content-between gap-2 mb-5 mt-30">
+                                                        <span
+                                                            class="text-muted">{{translate('Did not get any OTP')}} ?</span>
+                                                        <span class="text-muted" onclick="resend_otp()"
+                                                              style="cursor: pointer">{{translate('Resend it')}}</span>
+                                                    </div>
+
+                                                    {{-- Buttons --}}
+                                                    <div class="d-flex justify-content-center mb-4">
+                                                        <button type="submit"
+                                                                class="btn btn--primary">{{translate('Submit')}}</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+
+                                </div>
                                 {{-- </div> --}}
                                 <div class="c1-light-bg radius-10 py-3 px-4">
                                     <div class="d-flex justify-content-start gap-2">
@@ -341,7 +374,8 @@
                                     <div>
                                         <div class="d-flex flex-wrap gap-3 justify-content-lg-start">
                                             @foreach ($booking->evidence_photos ?? [] as $key => $img)
-                                                <img src="{{asset('storage/app/public/booking/evidence').'/'.$img}}" width="100"  class="max-height-100"
+                                                <img src="{{asset('storage/app/public/booking/evidence').'/'.$img}}"
+                                                     width="100" class="max-height-100"
                                                      onerror="this.src='{{asset('public/assets/provider-module')}}/img/media/info-details.png'">
                                             @endforeach
                                         </div>
@@ -490,7 +524,7 @@
 
     <script src="{{ asset('public/assets/admin-module/js/spartan-multi-image-picker.js') }}"></script>
     <script type="text/javascript">
-        $(function() {
+        $(function () {
             $("#evidence-photoss").spartanMultiImagePicker({
                 fieldName: 'evidence_photos[]',
                 maxCount: 6,
@@ -502,23 +536,23 @@
                     width: '100%',
                 },
                 dropFileLabel: "Drop Here",
-                onAddRow: function(index, file) {
+                onAddRow: function (index, file) {
 
                 },
-                onRenderedPreview: function(index) {
+                onRenderedPreview: function (index) {
 
                 },
-                onRemoveRow: function(index) {
+                onRemoveRow: function (index) {
 
                 },
-                onExtensionErr: function(index, file) {
+                onExtensionErr: function (index, file) {
                     toastr.error(
                         "{{ translate('messages.please_only_input_png_or_jpg_type_file') }}", {
                             CloseButton: true,
                             ProgressBar: true
                         });
                 },
-                onSizeErr: function(index, file) {
+                onSizeErr: function (index, file) {
                     toastr.error("{{ translate('messages.file_size_too_big') }}", {
                         CloseButton: true,
                         ProgressBar: true
@@ -531,42 +565,42 @@
 
     <script>
         $(document).ready(function () {
-        $(".otp-form *:input[type!=hidden]:first").focus();
-        let otp_fields = $(".otp-form .otp-field"),
-        otp_value_field = $(".otp-form .otp-value");
-        otp_fields.first().focus();
-        otp_fields
-        .on("input", function (e) {
-            $(this).val(
-            $(this)
-                .val()
-                .replace(/[^0-9]/g, "")
-            );
-            let opt_value = "";
-            otp_fields.each(function () {
-            let field_value = $(this).val();
-            if (field_value != "") opt_value += field_value;
-            });
-            otp_value_field.val(opt_value);
-        })
-        .on("keyup", function (e) {
-            let key = e.keyCode || e.charCode;
-            if (key == 8 || key == 46 || key == 37 || key == 40) {
-            // Backspace or Delete or Left Arrow or Down Arrow
-            $(this).prev().focus();
-            } else if (key == 38 || key == 39 || $(this).val() != "") {
-            // Right Arrow or Top Arrow or Value not empty
-            $(this).next().focus();
-            }
-        })
-        .on("paste", function (e) {
-            let paste_data = e.originalEvent.clipboardData.getData("text");
-            let paste_data_splitted = paste_data.split("");
-            $.each(paste_data_splitted, function (index, value) {
-            otp_fields.eq(index).val(value);
-            });
+            $(".otp-form *:input[type!=hidden]:first").focus();
+            let otp_fields = $(".otp-form .otp-field"),
+                otp_value_field = $(".otp-form .otp-value");
+            otp_fields.first().focus();
+            otp_fields
+                .on("input", function (e) {
+                    $(this).val(
+                        $(this)
+                            .val()
+                            .replace(/[^0-9]/g, "")
+                    );
+                    let opt_value = "";
+                    otp_fields.each(function () {
+                        let field_value = $(this).val();
+                        if (field_value != "") opt_value += field_value;
+                    });
+                    otp_value_field.val(opt_value);
+                })
+                .on("keyup", function (e) {
+                    let key = e.keyCode || e.charCode;
+                    if (key == 8 || key == 46 || key == 37 || key == 40) {
+                        // Backspace or Delete or Left Arrow or Down Arrow
+                        $(this).prev().focus();
+                    } else if (key == 38 || key == 39 || $(this).val() != "") {
+                        // Right Arrow or Top Arrow or Value not empty
+                        $(this).next().focus();
+                    }
+                })
+                .on("paste", function (e) {
+                    let paste_data = e.originalEvent.clipboardData.getData("text");
+                    let paste_data_splitted = paste_data.split("");
+                    $.each(paste_data_splitted, function (index, value) {
+                        otp_fields.eq(index).val(value);
+                    });
+                });
         });
-    });
     </script>
 
     <script>
@@ -625,7 +659,7 @@
 
 
         //update ajax function
-        function update_booking_details(route, message, componentId, updatedValue, type='get') {
+        function update_booking_details(route, message, componentId, updatedValue, type = 'get') {
             Swal.fire({
                 title: "{{translate('are_you_sure')}}?",
                 text: message,
@@ -662,20 +696,20 @@
                                     type: 'POST',
                                     success: function (response) {
                                         toastr.success(response.message, {
-                                        CloseButton: true,
-                                        ProgressBar: true
-                                    });
-                                    if (booking_otp_status) {
-                                        $('#upload_picture_modal').modal('hide');
-                                        open_otp_modal();
-                                        $('#otp_form').on('submit', function (e) {
-                                            e.preventDefault();
-                                            var formData = $(this).serialize(); // Serialize the form data
-                                            proceed_with_main_ajax_request(route, componentId, updatedValue, 'PUT', formData);
+                                            CloseButton: true,
+                                            ProgressBar: true
                                         });
-                                    }else{
-                                        proceed_with_main_ajax_request(route, componentId, updatedValue, 'PUT');
-                                    }
+                                        if (booking_otp_status) {
+                                            $('#upload_picture_modal').modal('hide');
+                                            open_otp_modal();
+                                            $('#otp_form').on('submit', function (e) {
+                                                e.preventDefault();
+                                                var formData = $(this).serialize(); // Serialize the form data
+                                                proceed_with_main_ajax_request(route, componentId, updatedValue, 'PUT', formData);
+                                            });
+                                        } else {
+                                            proceed_with_main_ajax_request(route, componentId, updatedValue, 'PUT');
+                                        }
                                     },
                                     error: function (error) {
                                         // Handle error if photo upload fails
@@ -683,7 +717,7 @@
                                 });
                             });
 
-                            $('#skip_button').on('click', function(e) {
+                            $('#skip_button').on('click', function (e) {
                                 // Unbind the 'submit' event handler from the '#otp_form'
                                 $('#otp_form').off('submit');
 
@@ -701,14 +735,14 @@
                             });
 
 
-                        }else if(booking_otp_status){
+                        } else if (booking_otp_status) {
                             open_otp_modal();
                             $('#otp_form').on('submit', function (e) {
                                 e.preventDefault();
                                 var formData = $(this).serialize(); // Serialize the form data
                                 proceed_with_main_ajax_request(route, componentId, updatedValue, 'PUT', formData);
                             });
-                        }else{
+                        } else {
                             proceed_with_main_ajax_request(route, componentId, updatedValue, 'PUT');
                         }
                     } else {
@@ -718,7 +752,7 @@
             });
         }
 
-        function proceed_with_main_ajax_request(route, componentId, updatedValue, type='get', formData = null) {
+        function proceed_with_main_ajax_request(route, componentId, updatedValue, type = 'get', formData = null) {
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -847,7 +881,7 @@
 
         //reset [while close modal]
         $("#serviceUpdateModal--{{$booking['id']}}").on('hidden.bs.modal', function () {
-            $('#service_selector__select').prop('selectedIndex',0);
+            $('#service_selector__select').prop('selectedIndex', 0);
             $("#service_variation_selector__select").html('<option value="" selected disabled>{{translate('Select Service Variant')}}</option>');
             $("#service_quantity").val('');
         });
@@ -862,20 +896,20 @@
             //let form_data = $('#booking-edit-table').serializeArray();
 
             //validation
-            if(service_id === '' || service_id === null) {
-                toastr.error('{{translate('Select a service')}}', { CloseButton: true, ProgressBar: true });
+            if (service_id === '' || service_id === null) {
+                toastr.error('{{translate('Select a service')}}', {CloseButton: true, ProgressBar: true});
                 return;
-            } else if(variant_key === '' || variant_key === null) {
-                toastr.error('{{translate('Select a variation')}}', { CloseButton: true, ProgressBar: true });
+            } else if (variant_key === '' || variant_key === null) {
+                toastr.error('{{translate('Select a variation')}}', {CloseButton: true, ProgressBar: true});
                 return;
-            } else if(quantity < 1) {
-                toastr.error('{{translate('Quantity must not be empty')}}', { CloseButton: true, ProgressBar: true });
+            } else if (quantity < 1) {
+                toastr.error('{{translate('Quantity must not be empty')}}', {CloseButton: true, ProgressBar: true});
                 return;
             }
 
             //if variant key already exists
             let variant_key_array = [];
-            $('input[name="variant_keys[]"]').each(function() {
+            $('input[name="variant_keys[]"]').each(function () {
                 variant_key_array.push($(this).val());
             });
 
@@ -886,17 +920,17 @@
                 const updated_qty = old_qty + quantity;
 
                 const old_total_cost = parseFloat($(`#total-cost-${variant_key}`).text());
-                const updated_total_cost = ((old_total_cost * updated_qty)/old_qty).toFixed(decimal_point);
+                const updated_total_cost = ((old_total_cost * updated_qty) / old_qty).toFixed(decimal_point);
 
                 const old_discount_amount = parseFloat($(`#discount-amount-${variant_key}`).text());
-                const updated_discount_amount = ((old_discount_amount * updated_qty)/old_qty).toFixed(decimal_point);
+                const updated_discount_amount = ((old_discount_amount * updated_qty) / old_qty).toFixed(decimal_point);
 
 
                 $(`#qty-${variant_key}`).val(updated_qty);
                 $(`#total-cost-${variant_key}`).text(updated_total_cost);
                 $(`#discount-amount-${variant_key}`).text(updated_discount_amount);
 
-                toastr.success('{{translate('Added successfully')}}', { CloseButton: true, ProgressBar: true });
+                toastr.success('{{translate('Added successfully')}}', {CloseButton: true, ProgressBar: true});
                 return;
             }
 
@@ -910,9 +944,9 @@
                 beforeSend: function () {
                     $('.preloader').show();
                 },
-                success: function(response) {
+                success: function (response) {
                     $("#service-edit-tbody").append(response.view);
-                    toastr.success('{{translate('Added successfully')}}', { CloseButton: true, ProgressBar: true });
+                    toastr.success('{{translate('Added successfully')}}', {CloseButton: true, ProgressBar: true});
                 },
                 complete: function () {
                     $('.preloader').hide();
@@ -959,7 +993,7 @@
                 url: "{{route('provider.booking.otp.resend')}}",
                 dataType: 'json',
                 data: {
-                    'booking_id' : '{{$booking->id}}'
+                    'booking_id': '{{$booking->id}}'
                 },
                 beforeSend: function () {
                     // Show loading indicator or perform other actions before sending

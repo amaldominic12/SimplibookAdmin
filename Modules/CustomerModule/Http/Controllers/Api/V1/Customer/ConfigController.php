@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
+use Modules\BusinessSettingsModule\Entities\DataSetting;
+use Modules\ServiceManagement\Entities\Service;
 use Modules\UserManagement\Entities\User;
 use Modules\ZoneManagement\Entities\Zone;
 use Stevebauman\Location\Facades\Location;
@@ -71,28 +73,16 @@ class ConfigController extends Controller
             'base_url' => url('/') . 'api/v1/',
             'currency_decimal_point' => (business_config('currency_decimal_point', 'business_information'))->live_values ?? null,
             'currency_code' => (business_config('currency_code', 'business_information'))->live_values ?? null,
+            'currency_symbol' => currency_symbol() ?? '',
             'currency_symbol_position' => (business_config('currency_symbol_position', 'business_information'))->live_values ?? null,
             'about_us' => route('about-us'),
             'privacy_policy' => route('privacy-policy'),
             'terms_and_conditions' => (business_config('terms_and_conditions', 'pages_setup'))->is_active ? route('terms-and-conditions') : "",
             'refund_policy' => (business_config('refund_policy', 'pages_setup'))->is_active ? route('refund-policy') : "",
             'cancellation_policy' => (business_config('cancellation_policy', 'pages_setup'))->is_active ? route('cancellation-policy') : "",
-            // 'default_location' => ['default' => [
-            //     'lat' => $location->latitude,
-            //     'lon' => $location->longitude
-            // ]],
-            'user_location_info' => $location,
-            'app_url_android' => '',
-            'app_url_ios' => '',
-            //'sms_verification' => (business_config('sms_verification', 'service_setup'))->live_values ?? null,
-            //'email_verification' => (business_config('email_verification', 'service_setup'))->live_values ?? null,
-            'map_api_key' => $this->google_map,
             'image_base_url' => asset('storage/app/public'),
-            'pagination_limit' => 20,
-            'languages' => LANGUAGES,
-            'currencies' => CURRENCIES,
-            'countries' => COUNTRIES,
-            'time_zones' => DateTimeZone::listIdentifiers(),
+            'pagination_limit' => (int)pagination_limit(),
+            'time_format' => (business_config('time_format', 'business_information'))->live_values ?? '24h',
             'payment_gateways' => $payment_gateways,
             'footer_text' => (business_config('footer_text', 'business_information'))->live_values ?? null,
             'cookies_text' => (business_config('cookies_text', 'business_information'))->live_values ?? null,
@@ -128,18 +118,19 @@ class ConfigController extends Controller
             'offline_payment' => (int) (business_config('offline_payment', 'service_setup'))?->live_values ?? null,
             'partial_payment_combinator' => (string) (business_config('partial_payment_combinator', 'service_setup'))?->live_values ?? null,
             'provider_self_registration' => (int) business_config('provider_self_registration', 'provider_config')?->live_values,
+            'confirm_otp_for_complete_service' => (int) business_config('booking_otp', 'booking_setup')?->live_values,
         ]), 200);
     }
 
     public function pages(): JsonResponse
     {
         return response()->json(response_formatter(DEFAULT_200, [
-            'about_us' => business_config('about_us', 'pages_setup'),
-            'terms_and_conditions' => business_config('terms_and_conditions', 'pages_setup'),
-            'refund_policy' => business_config('refund_policy', 'pages_setup'),
-            'return_policy' => business_config('return_policy', 'pages_setup'),
-            'cancellation_policy' => business_config('cancellation_policy', 'pages_setup'),
-            'privacy_policy' => business_config('privacy_policy', 'pages_setup'),
+            'about_us' => DataSetting::where('type', 'pages_setup')->where('key', 'about_us')->first(),
+            'terms_and_conditions' => DataSetting::where('type', 'pages_setup')->where('key', 'terms_and_conditions')->first(),
+            'refund_policy' => DataSetting::where('type', 'pages_setup')->where('key', 'refund_policy')->first(),
+            'return_policy' => DataSetting::where('type', 'pages_setup')->where('key', 'return_policy')->first(),
+            'cancellation_policy' => DataSetting::where('type', 'pages_setup')->where('key', 'cancellation_policy')->first(),
+            'privacy_policy' => DataSetting::where('type', 'pages_setup')->where('key', 'privacy_policy')->first(),
         ]), 200);
     }
 
@@ -158,7 +149,18 @@ class ConfigController extends Controller
         $zone = Zone::contains('coordinates', $point)->ofStatus(1)->latest()->first();
 
         if ($zone) {
-            return response()->json(response_formatter(DEFAULT_200, $zone), 200);
+
+            //service
+            $services = Service::withoutGlobalScope('zone_wise_data')->where('is_active', 1)->whereHas('category', function($query) use ($zone) {
+                $query->OfStatus(1)->withoutGlobalScope('zone_wise_data')->whereHas('zones', function($query) use ($zone) {
+                    $query->where('zone_id', $zone->id);
+                });
+            })->count();
+
+            return response()->json(response_formatter(DEFAULT_200, [
+                'zone' => $zone,
+                'available_services_count' => $services,
+            ]), 200);
         }
 
         return response()->json(response_formatter(ZONE_RESOURCE_404), 200);

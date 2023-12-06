@@ -129,12 +129,12 @@
 
                                                                                 <div class="d-flex justify-content-start">
                                                                                     <div class="form-check p-0">
-                                                                                        <input class="form-check-input" type="radio" name="review_status" id="flexRadioDefault1" value="1" checked required>
-                                                                                        <label class="form-check-label" for="flexRadioDefault1">{{translate('Review')}}</label>
+                                                                                        <input class="form-check-input" type="radio" name="review_status" id="flexRadioDefault{{$key}}" value="1" checked required>
+                                                                                        <label class="form-check-label" for="flexRadioDefault{{$key}}">{{translate('Review')}}</label>
                                                                                     </div>
                                                                                     <div class="form-check">
-                                                                                        <input class="form-check-input" type="radio" name="review_status" id="flexRadioDefault2" value="0" required>
-                                                                                        <label class="form-check-label" for="flexRadioDefault2">{{translate('Reject')}}</label>
+                                                                                        <input class="form-check-input" type="radio" name="review_status" id="flexRadioDefault2{{$key}}" value="0" required>
+                                                                                        <label class="form-check-label" for="flexRadioDefault2{{$key}}">{{translate('Reject')}}</label>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>

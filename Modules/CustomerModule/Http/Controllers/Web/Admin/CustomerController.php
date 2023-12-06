@@ -4,7 +4,6 @@ namespace Modules\CustomerModule\Http\Controllers\Web\Admin;
 
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -86,12 +85,21 @@ class CustomerController extends Controller
         $request->validate([
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email|unique:users',
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|unique:users',
+            'email' => 'required|email',
+            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10',
             'password' => 'required|min:6',
             'gender' => 'in:male,female,others',
             'profile_image' => 'image|mimes:jpeg,jpg,png,gif|max:10000',
         ]);
+
+        if (User::where('email', $request['email'])->exists()) {
+            Toastr::error(translate('Email already taken'));
+            return back();
+        }
+        if (User::where('phone', $request['phone'])->exists()) {
+            Toastr::error(translate('Phone already taken'));
+            return back();
+        }
 
         $user = $this->user;
         $user->first_name = $request->first_name;
@@ -200,13 +208,22 @@ class CustomerController extends Controller
         $request->validate([
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email|unique:users,email,' . $customer->id,
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|unique:users,phone,' . $customer->id,
+            'email' => 'required|email',
+            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10',
             'password' => '',
             'confirm_password' => !is_null($request->password) ? 'required|same:password' : '',
             'gender' => 'in:male,female,others',
             'profile_image' => 'image|mimes:jpeg,jpg,png,gif|max:10000',
         ]);
+
+        if (User::where('email', $request['email'])->where('id', '!=', $customer->id)->exists()) {
+            Toastr::error(translate('Email already taken'));
+            return back();
+        }
+        if (User::where('phone', $request['phone'])->where('id', '!=', $customer->id)->exists()) {
+            Toastr::error(translate('Phone already taken'));
+            return back();
+        }
 
         $customer->first_name = $request->first_name;
         $customer->last_name = $request->last_name;
@@ -258,7 +275,8 @@ class CustomerController extends Controller
     public function status_update(Request $request, $id): JsonResponse
     {
         $user = $this->user->where('id', $id)->first();
-        $this->user->where('id', $id)->update(['is_active' => !$user->is_active]);
+        $user->is_active = !$user->is_active;
+        $user->save();
 
         return response()->json(DEFAULT_STATUS_UPDATE_200, 200);
     }

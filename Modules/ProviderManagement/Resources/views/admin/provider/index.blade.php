@@ -153,6 +153,10 @@
                                                         <h5 class="mb-1">
                                                             <a href="{{route('admin.provider.details',[$provider->id, 'web_page'=>'overview'])}}">
                                                                 {{$provider->company_name}}
+                                                                @if($provider?->is_suspended && business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values)
+                                                                    <span class="text-danger fz-12">{{('(' . translate('Suspended') . ')')}}</span>
+                                                                @endif
+
                                                             </a>
                                                         </h5>
                                                         <span class="common-list_rating d-flex align-items-center gap-1">
@@ -173,6 +177,7 @@
                                                 <p>{{$provider->subscribed_services_count}}</p>
                                             </td>
                                             <td>{{$provider->bookings_count}}</td>
+
                                             <td>
                                                 <label class="switcher" data-bs-toggle="modal"
                                                        data-bs-target="#deactivateAlertModal">

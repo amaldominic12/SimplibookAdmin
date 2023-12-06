@@ -8,6 +8,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Modules\BookingModule\Entities\Booking;
 use Modules\CartModule\Entities\Cart;
 use Modules\CartModule\Entities\CartServiceInfo;
 use Modules\CartModule\Traits\AddedToCartTrait;
@@ -25,6 +26,8 @@ class CartController extends Controller
     private Service $service;
     private Variation $variation;
     private User $user;
+
+    private Booking $booking;
     private Provider $provider;
     private Guest $guest;
     private bool $is_customer_logged_in;
@@ -32,7 +35,7 @@ class CartController extends Controller
 
     use CartTrait, AddedToCartTrait;
 
-    public function __construct(Cart $cart, Service $service, Variation $variation, User $user, Provider $provider, Guest $guest, Request $request)
+    public function __construct(Cart $cart, Service $service, Variation $variation, User $user, Provider $provider, Guest $guest, Request $request, Booking $booking)
     {
         $this->cart = $cart;
         $this->service = $service;
@@ -40,6 +43,7 @@ class CartController extends Controller
         $this->user = $user;
         $this->provider = $provider;
         $this->guest = $guest;
+        $this->booking = $booking;
 
         $this->is_customer_logged_in = (bool)auth('api')->user();
         $this->customer_user_id = $this->is_customer_logged_in ? auth('api')->user()->id : $request['guest_id'];
@@ -212,22 +216,19 @@ class CartController extends Controller
     public function update_provider(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'provider_id' => 'required|uuid'
+            'provider_id' => 'nullable|uuid'
         ]);
 
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
         }
 
-        //check if provider exists
-        if (!$this->provider->where('id', $request['provider_id'])->exists()) {
-            return response()->json(response_formatter(DEFAULT_204), 200);
-        }
+        $provider_id = $request->has('provider_id') ? $request->provider_id : null;
 
         //update provider
         $this->cart
             ->where('customer_id', $this->customer_user_id)
-            ->update(['provider_id' => $request['provider_id']]);
+            ->update(['provider_id' => $provider_id]);
 
         return response()->json(response_formatter(DEFAULT_UPDATE_200), 200);
     }
@@ -264,5 +265,136 @@ class CartController extends Controller
         $cart->delete();
 
         return response()->json(response_formatter(DEFAULT_DELETE_200), 200);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function rebook_add_to_cart(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'guest_id' => $this->is_customer_logged_in ? 'nullable' : 'required|uuid',
+            'booking_id' => 'required|uuid',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        }
+
+        $customer_user_id = $this->customer_user_id;
+
+        $booking = $this->booking->where('id', $request->booking_id)->first();
+
+        // Check if all items are already in the cart
+        $allItemsInCart = $this->checkIfAllItemsInCart($booking->detail, $customer_user_id);
+        if ($allItemsInCart) {
+            return response()->json(response_formatter(DEFAULT_CART_ALREADY_ADDED_200), 200);
+        }
+
+        $provider = $this->provider
+            ->where('id', $booking?->provider->id)
+            ->ofStatus(1)
+            ->when(business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values, function($query){
+                $query->where('is_suspended', 0);
+            })
+            ->where('zone_id', $request->header('zoneid'))
+            ->whereHas('subscribed_services', function ($query) use ($request, $booking) {
+                $query->where('sub_category_id', $booking->sub_category_id)->where('is_subscribed', 1);
+            })
+            ->first();
+
+
+        if (!Cart::where('sub_category_id', $booking->sub_category_id)->where('customer_id', $customer_user_id)->exists()){
+            Cart::where('customer_id', $customer_user_id)->delete();
+        }
+
+
+        foreach ($booking->detail as $detail) {
+
+            $service_data = $this->service->where('id', $detail->service_id)->active()->first();
+
+            if ($service_data) {
+                $this->added_to_cart_update($customer_user_id, $detail->service_id, !$this->is_customer_logged_in);
+
+                $variation = $this->variation
+                    ->where(['zone_id' => Config::get('zone_id'), 'service_id' => $detail->service_id])
+                    ->where(['variant_key' => $detail->variant_key])
+                    ->first();
+
+                if (isset($variation)) {
+                    DB::transaction(function () use ($detail, $customer_user_id, $variation, $provider, $booking, $request) {
+                        $service = $this->service->find($detail->service_id);
+
+                        $check_cart = $this->cart->where([
+                            'service_id' => $detail->service_id,
+                            'variant_key' => $detail->variant_key,
+                            'customer_id' => $customer_user_id])->first();
+
+                        $cart = $check_cart ?? new Cart();
+                        $quantity = $detail->quantity;
+
+                        //calculation
+                        $basic_discount = basic_discount_calculation($service, $variation->price * $quantity);
+                        $campaign_discount = campaign_discount_calculation($service, $variation->price * $quantity);
+                        $subtotal = round($variation->price * $quantity, 2);
+
+                        $applicable_discount = ($campaign_discount >= $basic_discount) ? $campaign_discount : $basic_discount;
+
+                        $tax = round((($variation->price * $quantity - $applicable_discount) * $service['tax']) / 100, 2);
+
+                        //between normal discount & campaign discount, greater one will be calculated
+                        $basic_discount = $basic_discount > $campaign_discount ? $basic_discount : 0;
+                        $campaign_discount = $campaign_discount >= $basic_discount ? $campaign_discount : 0;
+
+                        //DB part
+                        $cart->provider_id = $provider?->id ?? null;
+                        $cart->customer_id = $customer_user_id;
+                        $cart->service_id = $detail->service_id;
+                        $cart->category_id = $booking->category_id;
+                        $cart->sub_category_id = $booking->sub_category_id;
+                        $cart->variant_key = $detail->variant_key;
+                        $cart->quantity = $quantity;
+                        $cart->service_cost = $variation->price;
+                        $cart->discount_amount = $basic_discount;
+                        $cart->campaign_discount = $campaign_discount;
+                        $cart->coupon_discount = 0;
+                        $cart->coupon_code = null;
+                        $cart->is_guest = !$this->is_customer_logged_in;
+                        $cart->tax_amount = round($tax, 2);
+                        $cart->total_cost = round($subtotal - $basic_discount - $campaign_discount + $tax, 2);
+                        $cart->save();
+
+                        if (!$this->is_customer_logged_in) {
+                            $guest = $this->guest;
+                            $guest->ip_address = $request->ip();
+                            $guest->guest_id = $request->guest_id;
+                            $guest->save();
+                        }
+
+                    });
+                }
+
+            }
+        }
+        return response()->json(response_formatter(DEFAULT_CART_STORE_200), 200);
+
+    }
+
+    private function checkIfAllItemsInCart($details, $customerUserId): bool
+    {
+        foreach ($details as $detail) {
+            $check_cart = $this->cart->where([
+                'service_id' => $detail->service_id,
+                'variant_key' => $detail->variant_key,
+                'customer_id' => $customerUserId,
+            ])->exists();
+
+            if (!$check_cart) {
+                return false; // At least one item is not in the cart
+            }
+        }
+
+        return true; // All items are in the cart
     }
 }

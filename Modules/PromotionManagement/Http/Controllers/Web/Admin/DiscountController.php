@@ -69,7 +69,7 @@ class DiscountController extends Controller
     public function create(Request $request): View|Factory|Application
     {
         $categories = $this->category->ofStatus(1)->ofType('main')->latest()->get();
-        $zones = $this->zone->ofStatus(1)->latest()->get();
+        $zones = $this->zone->withoutGlobalScope('translate')->ofStatus(1)->latest()->get();
         $services = $this->service->active()->latest()->get();
 
         return view('promotionmanagement::admin.discounts.create', compact('categories', 'zones', 'services'));
@@ -139,7 +139,7 @@ class DiscountController extends Controller
     {
         $discount = $this->discountQuery->with(['category_types', 'service_types', 'zone_types'])->where('id', $id)->first();
         $categories = $this->category->ofStatus(1)->ofType('main')->latest()->get();
-        $zones = $this->zone->ofStatus(1)->latest()->get();
+        $zones = $this->zone->withoutGlobalScope('translate')->ofStatus(1)->latest()->get();
         $services = $this->service->active()->latest()->get();
 
         return view('promotionmanagement::admin.discounts.edit', compact('categories', 'zones', 'services', 'discount'));

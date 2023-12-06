@@ -19,6 +19,8 @@ use Modules\ServiceManagement\Entities\RecentView;
 use Modules\ServiceManagement\Entities\Service;
 use Modules\ServiceManagement\Entities\ServiceRequest;
 use Modules\ServiceManagement\Traits\VisitedServiceTrait;
+use Modules\ZoneManagement\Entities\Zone;
+use Stevebauman\Location\Facades\Location;
 
 class ServiceController extends Controller
 {
@@ -30,14 +32,16 @@ class ServiceController extends Controller
     private RecentView $recent_view;
     private RecentSearch $recent_search;
     private Booking $booking;
+    private Zone $zone;
 
-    public function __construct(Service $service, Review $review, RecentView $recent_view, RecentSearch $recent_search, Booking $booking)
+    public function __construct(Service $service, Review $review, RecentView $recent_view, RecentSearch $recent_search, Booking $booking, Zone $zone)
     {
         $this->service = $service;
         $this->review = $review;
         $this->recent_view = $recent_view;
         $this->recent_search = $recent_search;
         $this->booking = $booking;
+        $this->zone = $zone;
     }
 
     /**
@@ -344,6 +348,15 @@ class ServiceController extends Controller
             'offset' => 'required|numeric|min:1|max:100000'
         ]);
 
+        if (!session()->has('location')) {
+            $data = Location::get($request->ip());
+            $location = [
+                'lat' => $data ? $data->latitude : '23.757989',
+                'lng' => $data ? $data->longitude : '90.360587'
+            ];
+            session()->put('location',$location);
+        }
+
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
         }
@@ -562,5 +575,23 @@ class ServiceController extends Controller
             return response()->json(response_formatter(DEFAULT_200, $requests), 200);
         }
         return response()->json(response_formatter(DEFAULT_204, $requests), 200);
+    }
+
+    public function service_area_availability(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'limit' => 'required|numeric|min:1|max:200',
+            'offset' => 'required|numeric|min:1|max:100000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        }
+
+        $zones = $this->zone
+            ->where('is_active', 1)
+            ->latest()->paginate($request['limit'], ['*'], 'offset', $request['offset'])->withPath('');
+
+        return response()->json(response_formatter(DEFAULT_200, $zones), 200);
     }
 }

@@ -76,8 +76,8 @@ class ServicemanController extends Controller
         $validator = Validator::make($request->all(), [
             'first_name' => 'required',
             'last_name' => 'required',
-            'phone' => 'required|unique:users,phone',
-            'email' => 'required|email|unique:users,email',
+            'phone' => 'required',
+            'email' => 'required|email',
             'password' => 'required|min:8',
             'confirm_password' => 'required|same:password',
             'profile_image' => 'required|image|mimes:jpeg,jpg,png,gif|max:10000',
@@ -89,6 +89,14 @@ class ServicemanController extends Controller
 
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        }
+
+        //email & phone check
+        if (User::where('email', $request['email'])->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"email","message"=>translate('Email already taken')]]), 400);
+        }
+        if (User::where('phone', $request['phone'])->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"phone","message"=>translate('Phone already taken')]]), 400);
         }
 
         $identity_images = [];
@@ -185,8 +193,8 @@ class ServicemanController extends Controller
         $validator = Validator::make($request->all(), [
             'first_name' => 'required',
             'last_name' => 'required',
-            'phone' => 'required|unique:users,phone,' . $employee->id,
-            'email' => 'required|email|unique:users,email,' . $employee->id,
+            'phone' => 'required',
+            'email' => 'required|email',
             'password' => 'min:8',
             'profile_image' => 'image|mimes:jpeg,jpg,png,gif|max:10000',
             'identity_type' => 'in:passport,driving_license,company_id,nid,trade_license',
@@ -197,6 +205,14 @@ class ServicemanController extends Controller
 
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        }
+
+        //email & phone check
+        if (User::where('email', $request['email'])->where('id', '!=', $employee->id)->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"email","message"=>translate('Email already taken')]]), 400);
+        }
+        if (User::where('phone', $request['phone'])->where('id', '!=', $employee->id)->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"phone","message"=>translate('Phone already taken')]]), 400);
         }
 
         $identity_images = [];
@@ -244,7 +260,6 @@ class ServicemanController extends Controller
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
         }
-
         $serviceman_ids = $this->serviceman->whereIn('id', $request->serviceman_id)->pluck('user_id')->toArray();
         if (count($serviceman_ids) < 1) {
             return response()->json(response_formatter(DEFAULT_204), 200);
@@ -258,7 +273,7 @@ class ServicemanController extends Controller
                 foreach ($employee->identification_image as $image) {
                     file_remover('serviceman/identity/', $image);
                 }
-                $employee->forceDelete();
+                $employee->delete();
             }
             return response()->json(response_formatter(DEFAULT_DELETE_200), 200);
         }

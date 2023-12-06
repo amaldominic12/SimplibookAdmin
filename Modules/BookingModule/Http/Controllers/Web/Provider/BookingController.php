@@ -150,17 +150,22 @@ class BookingController extends Controller
                 $query->where('provider_id', $request->user()->provider->id);
             })
             ->when($request['booking_status'] == 'pending', function ($query) use ($request, $max_booking_amount) {
-                $query->ofBookingStatus($request['booking_status'])->whereIn('sub_category_id', $this->subscribed_sub_categories)
-                ->when($max_booking_amount > 0, function($query) use ($max_booking_amount) {
-                    $query->where(function ($query) use ($max_booking_amount) {
-                        $query->where('payment_method', 'cash_after_service')
-                            ->where(function ($query) use ($max_booking_amount) {
-                                $query->where('is_verified', 1)
-                                    ->orWhere('total_booking_amount', '<=', $max_booking_amount);
-                            })
-                            ->orWhere('payment_method', '<>', 'cash_after_service');
-                    });
-                });
+                if (!$request->user()?->provider?->is_suspended || !business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values) {
+                    $query->ofBookingStatus($request['booking_status'])->whereIn('sub_category_id', $this->subscribed_sub_categories)
+                        ->when($max_booking_amount > 0, function($query) use ($max_booking_amount) {
+                            $query->where(function ($query) use ($max_booking_amount) {
+                                $query->where('payment_method', 'cash_after_service')
+                                    ->where(function ($query) use ($max_booking_amount) {
+                                        $query->where('is_verified', 1)
+                                            ->orWhere('total_booking_amount', '<=', $max_booking_amount);
+                                    })
+                                    ->orWhere('payment_method', '<>', 'cash_after_service');
+                            });
+                        });
+                } else {
+                    //will be updated later
+                    $query->whereNull('id');
+                }
             })
             ->when($booking_status == 'accepted', function ($query) use ($booking_status, $max_booking_amount) {
                 $query->when($max_booking_amount > 0, function($query) use ($max_booking_amount) {
@@ -190,14 +195,16 @@ class BookingController extends Controller
         //for filter
         $categories = $this->category->select('id', 'parent_id', 'name')->where('position', 1)->get();
         $sub_categories = $this->category->select('id', 'parent_id', 'name')->where('position', 2)->get();
+
         return view('bookingmodule::provider.booking.list', compact('bookings', 'categories', 'sub_categories', 'query_param', 'filter_counter'));
     }
 
     /**
      * Display a listing of the resource.
+     * @param $id
      * @return void
      */
-    public function check_booking($id)
+    public function check_booking($id): void
     {
         $this->booking->where('id', $id)->whereIn('sub_category_id', $this->subscribed_sub_categories)
             ->where('is_checked', 0)->update(['is_checked' => 1]); //update the unseen bookings
@@ -209,7 +216,7 @@ class BookingController extends Controller
      * @param Request $request
      * @return Application|Factory|View|RedirectResponse
      */
-    public function details($id, Request $request)
+    public function details($id, Request $request): View|Factory|RedirectResponse|Application
     {
         Validator::make($request->all(), [
             'web_page' => 'required|in:details,status',
@@ -220,7 +227,7 @@ class BookingController extends Controller
 
         if ($booking['booking_status'] != 'pending' && $booking['provider_id'] != $request->user()->provider->id) {
             Toastr::error(ACCESS_DENIED['message']);
-            return redirect(route('provider.booking.list'));
+            return redirect(route('provider.booking.list', ['booking_status' => 'accepted']));
         }
 
         if ($request->web_page == 'details') {
@@ -270,12 +277,25 @@ class BookingController extends Controller
             return $query->where('provider_id', $request->user()->provider->id)->orWhereNull('provider_id');
         })->first();
 
+        $provider = $request->user()->provider;
+
         if (isset($booking)) {
             //OTP
             if ($request->booking_status == 'completed' && (business_config('booking_otp', 'booking_setup'))?->live_values == 1) {
+
+                if ($booking->payment_method == 'offline_payment' && !$booking->is_paid) {
+                    return response()->json(response_formatter(UPDATE_FAILED_FOR_OFFLINE_PAYMENT_VERIFICATION_200), 200);
+                }
+
                 $otp_number = implode('', $request->otp_field);
                 if ($booking->booking_otp != $otp_number) {
                     return response()->json(response_formatter(OTP_VERIFICATION_FAIL_403), 200);
+                }
+            }
+
+            if($request->booking_status == 'accepted'){
+                if ($provider?->is_suspended == 1 && business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values){
+                    return response()->json(DEFAULT_SUSPEND_200, 200);
                 }
             }
 

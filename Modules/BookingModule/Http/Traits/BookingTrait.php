@@ -78,7 +78,7 @@ trait BookingTrait
                 $booking->is_paid = $request['payment_method'] == 'cash_after_service' || $request['payment_method'] == 'offline_payment' ? 0 : 1;
                 $booking->payment_method = $request['payment_method'];
                 $booking->transaction_id = $transaction_id;
-                $booking->total_booking_amount = $total_booking_amount ;
+                $booking->total_booking_amount = $total_booking_amount;
                 $booking->total_tax_amount = $cart_data->sum('tax_amount');
                 $booking->total_discount_amount = $cart_data->sum('discount_amount');
                 $booking->total_campaign_discount_amount = $cart_data->sum('campaign_discount');
@@ -185,35 +185,58 @@ trait BookingTrait
 
                 $max_booking_amount = (business_config('max_booking_amount', 'booking_setup'))?->live_values;
 
+                $booking_notification_status = business_config('booking', 'notification_settings')->live_values;
+
                 //provider notification
                 if ($booking->payment_method == 'cash_after_service') {
                     if ($max_booking_amount > 0 && $booking->total_booking_amount < $max_booking_amount) {
                         if (isset($booking->provider_id)) {
-                            $fcm_token = Provider::with('owner')->whereId($booking->provider_id)->first()->owner->fcm_token ?? null;
-                            if (!is_null($fcm_token)) {
-                                device_notification($fcm_token, translate('New booking has arrived'), null, null, $booking->id, 'booking');
+                            $provider = Provider::with('owner')->whereId($booking->provider_id)->first();
+                            $fcm_token = $provider?->owner->fcm_token ?? null;
+                            $language_key = $provider?->owner?->current_language_key;
+                            if (!is_null($fcm_token) && isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
+                                $title = get_push_notification_message('booking_accepted', 'provider_notification', $language_key);
+                                if ($title) {
+                                    device_notification($fcm_token, $title, null, null, $booking->id, 'booking');
+                                }
                             }
                         } else {
                             $provider_ids = SubscribedService::where('sub_category_id', $sub_category)->ofSubscription(1)->pluck('provider_id')->toArray();
-                            $providers = Provider::with('owner')->whereIn('id', $provider_ids)->where('zone_id', $booking->zone_id)->get();
+                            if (business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values) {
+                                $providers = Provider::with('owner')->whereIn('id', $provider_ids)->where('zone_id', $booking?->zone_id)->where('is_suspended', 0)->get();
+                            } else {
+                                $providers = Provider::with('owner')->whereIn('id', $provider_ids)->where('zone_id', $booking?->zone_id)->get();
+                            }
+
                             foreach ($providers as $provider) {
                                 $fcm_token = $provider->owner->fcm_token ?? null;
-                                if (!is_null($fcm_token)) device_notification($fcm_token, translate('New booking has arrived'), null, null, $booking->id, 'booking');
+                                $title = get_push_notification_message('new_service_request_arrived', 'provider_notification', $provider?->owner?->current_language_key);
+                                if (!is_null($fcm_token) && $title && isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) device_notification($fcm_token, $title, null, null, $booking->id, 'booking');
                             }
                         }
                     }
                 } else {
                     if (isset($booking->provider_id)) {
-                        $fcm_token = Provider::with('owner')->whereId($booking->provider_id)->first()->owner->fcm_token ?? null;
+                        $provider = Provider::with('owner')->whereId($booking->provider_id)->first();
+                        $fcm_token = $provider?->owner?->fcm_token ?? null;
+                        $language_key = $provider?->owner?->current_language_key;
                         if (!is_null($fcm_token)) {
-                            device_notification($fcm_token, translate('New booking has arrived'), null, null, $booking->id, 'booking');
+                            $title = get_push_notification_message('booking_accepted', 'provider_notification', $language_key);
+                            if ($title && $fcm_token && isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
+                                device_notification($fcm_token, $title, null, null, $booking->id, 'booking');
+                            }
                         }
                     } else {
                         $provider_ids = SubscribedService::where('sub_category_id', $sub_category)->ofSubscription(1)->pluck('provider_id')->toArray();
-                        $providers = Provider::with('owner')->whereIn('id', $provider_ids)->where('zone_id', $booking->zone_id)->get();
+                        if (business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values) {
+                            $providers = Provider::with('owner')->whereIn('id', $provider_ids)->where('zone_id', $booking->zone_id)->where('is_suspended', 0)->get();
+                        } else {
+                            $providers = Provider::with('owner')->whereIn('id', $provider_ids)->where('zone_id', $booking->zone_id)->get();
+                        }
                         foreach ($providers as $provider) {
                             $fcm_token = $provider->owner->fcm_token ?? null;
-                            if (!is_null($fcm_token)) device_notification($fcm_token, translate('New booking has arrived'), null, null, $booking->id, 'booking');
+                            $title = get_push_notification_message('new_service_request_arrived', 'provider_notification', $provider?->owner?->current_language_key);
+                            if (!is_null($fcm_token) && $title && isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) device_notification($fcm_token, $title, null, null, $booking->id, 'booking');
                         }
                     }
                 }
@@ -232,7 +255,7 @@ trait BookingTrait
     }
 
     /**
-     * @param $user_id
+     * @param $customer_user_id
      * @param $request
      * @param $transaction_id
      * @param $data
@@ -276,7 +299,7 @@ trait BookingTrait
             $booking->sub_category_id = $data['sub_category_id'];
             $booking->zone_id = $data['zone_id'];
             $booking->booking_status = 'accepted';
-            $booking->is_paid = $data['payment_method'] == 'cash_after_service' ? 0 : 1;
+            $booking->is_paid = $data['payment_method'] == 'cash_after_service' || $request['payment_method'] == 'offline_payment' ? 0 : 1;;
             $booking->payment_method = $data['payment_method'];
             $booking->transaction_id = $transaction_id;
             $booking->total_booking_amount = $total_booking_amount + $extra_fee;
@@ -380,9 +403,15 @@ trait BookingTrait
             }
 
             //provider notification
-            $fcm_token = Provider::with('owner')->whereId($booking->provider_id)->first()->owner->fcm_token ?? null;
-            if (!is_null($fcm_token)) {
-                device_notification($fcm_token, translate('New booking has arrived'), null, null, $booking->id, 'booking');
+            $provider = Provider::with('owner')->whereId($booking->provider_id)->first();
+            $language_key = $provider->owner?->current_language_key;
+            if (!is_null($provider?->owner?->fcm_token) && $provider?->is_suspended == 0) {
+                $title = get_push_notification_message('booking_accepted', 'provider_notification', $language_key);
+                $booking_notification_status = business_config('booking', 'notification_settings')->live_values;
+
+                if ($title && isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
+                    device_notification($provider->owner->fcm_token, $title, null, null, $booking->id, 'booking');
+                }
             }
         });
 
@@ -397,7 +426,6 @@ trait BookingTrait
     //=============== EDIT BOOKING ===============
 
     /**
-     * @param $user_id
      * @param $request
      * @return void
      */
@@ -477,13 +505,52 @@ trait BookingTrait
 
             //transaction will be done for additional charges > after completing the service status
 
-            //provider notification
-            if (isset($booking->provider_id)) {
-                $fcm_token = Provider::with('owner')->whereId($booking->provider_id)->first()->owner->fcm_token ?? null;
-                if (!is_null($fcm_token)) {
-                    device_notification($fcm_token, translate('New service added in the booking'), null, null, $booking->id, 'booking');
+            $notifications[] = [
+                'key' => 'booking_edit_service_add',
+                'settings_type' => 'customer_notification'
+            ];
+            $notifications[] = [
+                'key' => 'booking_edit_service_add',
+                'settings_type' => 'provider_notification'
+            ];
+            $notifications[] = [
+                'key' => 'booking_edit_service_add',
+                'settings_type' => 'serviceman_notification'
+            ];
+
+            $booking_notification_status = business_config('booking', 'notification_settings')->live_values;
+
+            if (isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
+                foreach ($notifications ?? [] as $notification) {
+                    $key = $notification['key'];
+                    $settingsType = $notification['settings_type'];
+
+                    if ($settingsType == 'customer_notification') {
+                        $user = $booking?->customer;
+                        $title = get_push_notification_message($key, $settingsType, $user?->current_language_key);
+                        if ($user?->fcm_token && $title) {
+                            device_notification($user?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
+
+                    if ($settingsType == 'provider_notification') {
+                        $provider = $booking?->provider?->owner;
+                        $title = get_push_notification_message($key, $settingsType, $provider?->current_language_key);
+                        if ($provider?->fcm_token && $title) {
+                            device_notification($provider?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
+
+                    if ($settingsType == 'serviceman_notification') {
+                        $serviceman = $booking?->serviceman?->user;
+                        $title = get_push_notification_message($key, $settingsType, $serviceman?->current_language_key);
+                        if ($serviceman?->fcm_token && $title) {
+                            device_notification($serviceman?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
                 }
             }
+
         });
     }
 
@@ -512,7 +579,7 @@ trait BookingTrait
             $subtotal = round($variation->price * $quantity_to_add, 2);
 
             $applicable_discount = max($campaign_discount, $basic_discount);
-            $tax = round(((($variation->price*$quantity_to_add - $applicable_discount) * $service['tax']) / 100), 2);
+            $tax = round(((($variation->price * $quantity_to_add - $applicable_discount) * $service['tax']) / 100), 2);
 
             //between normal discount & campaign discount, greater one will be calculated
             $basic_discount = $basic_discount > $campaign_discount ? $basic_discount : 0;
@@ -543,7 +610,7 @@ trait BookingTrait
             $subtotal = round($variation->price * $new_quantity, 2);
 
             $applicable_discount = ($campaign_discount >= $basic_discount) ? $campaign_discount : $basic_discount;
-            $tax = round(((($variation->price*$new_quantity - $applicable_discount) * $service['tax']) / 100), 2);
+            $tax = round(((($variation->price * $new_quantity - $applicable_discount) * $service['tax']) / 100), 2);
 
             //between normal discount & campaign discount, greater one will be calculated
             $basic_discount = $basic_discount > $campaign_discount ? $basic_discount : 0;
@@ -575,11 +642,50 @@ trait BookingTrait
 
             //transaction will be done for additional charges > after completing the service status
 
-            //provider notification
-            if (isset($booking->provider_id)) {
-                $fcm_token = Provider::with('owner')->whereId($booking->provider_id)->first()->owner->fcm_token ?? null;
-                if (!is_null($fcm_token)) {
-                    device_notification($fcm_token, translate('Booking modified'), null, null, $booking->id, 'booking');
+            $notifications[] =
+                [
+                    'key' => 'booking_edit_service_quantity_increase',
+                    'settings_type' => 'customer_notification'
+                ];
+            $notifications[] = [
+                'key' => 'booking_edit_service_quantity_increase',
+                'settings_type' => 'provider_notification'
+            ];
+            $notifications[] = [
+                'key' => 'booking_edit_service_quantity_increase',
+                'settings_type' => 'serviceman_notification'
+            ];
+
+            $booking_notification_status = business_config('booking', 'notification_settings')->live_values;
+
+            if (isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
+                foreach ($notifications ?? [] as $notification) {
+                    $key = $notification['key'];
+                    $settingsType = $notification['settings_type'];
+
+                    if ($settingsType == 'customer_notification') {
+                        $user = $booking?->customer;
+                        $title = get_push_notification_message($key, $settingsType, $user?->current_language_key);
+                        if ($user?->fcm_token && $title) {
+                            device_notification($user?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
+
+                    if ($settingsType == 'provider_notification') {
+                        $provider = $booking?->provider?->owner;
+                        $title = get_push_notification_message($key, $settingsType, $provider?->current_language_key);
+                        if ($provider?->fcm_token && $title) {
+                            device_notification($provider?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
+
+                    if ($settingsType == 'serviceman_notification') {
+                        $serviceman = $booking?->serviceman?->user;
+                        $title = get_push_notification_message($key, $settingsType, $serviceman?->current_language_key);
+                        if ($serviceman?->fcm_token && $title) {
+                            device_notification($serviceman?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
                 }
             }
         });
@@ -646,11 +752,50 @@ trait BookingTrait
                 remove_booking_service_transaction_for_digital_payment($booking, $refund_amount);
             }
 
-            //provider notification
-            if (isset($booking->provider_id)) {
-                $fcm_token = Provider::with('owner')->whereId($booking->provider_id)->first()->owner->fcm_token ?? null;
-                if (!is_null($fcm_token)) {
-                    device_notification($fcm_token, translate('Service has been removed from the booking'), null, null, $booking->id, 'booking');
+            $notifications[] = [
+                'key' => 'booking_edit_service_remove',
+                'settings_type' => 'customer_notification'
+            ];
+            $notifications[] = [
+                'key' => 'booking_edit_service_remove',
+                'settings_type' => 'provider_notification'
+            ];
+            $notifications[] = [
+                'key' => 'booking_edit_service_remove',
+                'settings_type' => 'serviceman_notification'
+            ];
+
+            $booking_notification_status = business_config('booking', 'notification_settings')->live_values;
+
+            if (isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
+
+                foreach ($notifications ?? [] as $notification) {
+                    $key = $notification['key'];
+                    $settingsType = $notification['settings_type'];
+
+                    if ($settingsType == 'customer_notification') {
+                        $user = $booking?->customer;
+                        $title = get_push_notification_message($key, $settingsType, $user?->current_language_key);
+                        if ($user?->fcm_token && $title) {
+                            device_notification($user?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
+
+                    if ($settingsType == 'provider_notification') {
+                        $provider = $booking?->provider?->owner;
+                        $title = get_push_notification_message($key, $settingsType, $provider?->current_language_key);
+                        if ($provider?->fcm_token && $title) {
+                            device_notification($provider?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
+
+                    if ($settingsType == 'serviceman_notification') {
+                        $serviceman = $booking?->serviceman?->user;
+                        $title = get_push_notification_message($key, $settingsType, $serviceman?->current_language_key);
+                        if ($serviceman?->fcm_token && $title) {
+                            device_notification($serviceman?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
                 }
             }
         });
@@ -681,7 +826,7 @@ trait BookingTrait
             $subtotal = round($variation->price * $quantity_to_remove, 2);
 
             $applicable_discount = max($campaign_discount, $basic_discount);
-            $tax = round(((($variation->price*$quantity_to_remove - $applicable_discount) * $service['tax']) / 100), 2);
+            $tax = round(((($variation->price * $quantity_to_remove - $applicable_discount) * $service['tax']) / 100), 2);
 
             //between normal discount & campaign discount, greater one will be calculated
             $basic_discount = $basic_discount > $campaign_discount ? $basic_discount : 0;
@@ -718,7 +863,7 @@ trait BookingTrait
             $subtotal = round($variation->price * $new_quantity, 2);
 
             $applicable_discount = ($campaign_discount >= $basic_discount) ? $campaign_discount : $basic_discount;
-            $tax = round(((($variation->price*$new_quantity - $applicable_discount) * $service['tax']) / 100), 2);
+            $tax = round(((($variation->price * $new_quantity - $applicable_discount) * $service['tax']) / 100), 2);
 
             //between normal discount & campaign discount, greater one will be calculated
             $basic_discount = $basic_discount > $campaign_discount ? $basic_discount : 0;
@@ -753,11 +898,51 @@ trait BookingTrait
                 remove_booking_service_transaction_for_digital_payment($booking, $removed_total);
             }
 
-            //provider notification
-            if (isset($booking->provider_id)) {
-                $fcm_token = Provider::with('owner')->whereId($booking->provider_id)->first()->owner->fcm_token ?? null;
-                if (!is_null($fcm_token)) {
-                    device_notification($fcm_token, translate('Service has been removed from the booking'), null, null, $booking->id, 'booking');
+            $notifications[] =
+                [
+                    'key' => 'booking_edit_service_quantity_decrease',
+                    'settings_type' => 'customer_notification'
+                ];
+            $notifications[] = [
+                'key' => 'booking_edit_service_quantity_decrease',
+                'settings_type' => 'provider_notification'
+            ];
+            $notifications[] = [
+                'key' => 'booking_edit_service_quantity_decrease',
+                'settings_type' => 'serviceman_notification'
+            ];
+
+            $booking_notification_status = business_config('booking', 'notification_settings')->live_values;
+
+            if (isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
+
+                foreach ($notifications ?? [] as $notification) {
+                    $key = $notification['key'];
+                    $settingsType = $notification['settings_type'];
+
+                    if ($settingsType == 'customer_notification') {
+                        $user = $booking?->customer;
+                        $title = get_push_notification_message($key, $settingsType, $user?->current_language_key);
+                        if ($user?->fcm_token && $title) {
+                            device_notification($user?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
+
+                    if ($settingsType == 'provider_notification') {
+                        $provider = $booking?->provider?->owner;
+                        $title = get_push_notification_message($key, $settingsType, $provider?->current_language_key);
+                        if ($provider?->fcm_token && $title) {
+                            device_notification($provider?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
+
+                    if ($settingsType == 'serviceman_notification') {
+                        $serviceman = $booking?->serviceman?->user;
+                        $title = get_push_notification_message($key, $settingsType, $serviceman?->current_language_key);
+                        if ($serviceman?->fcm_token && $title) {
+                            device_notification($serviceman?->fcm_token, $title, null, null, $booking->id, 'booking');
+                        }
+                    }
                 }
             }
         });
@@ -900,12 +1085,12 @@ trait BookingTrait
     }
 
     /**
-     * @param $booking_id
+     * @param $booking
      * @param float $booking_amount
      * @param $provider_id
      * @return void
      */
-    private function update_admin_commission($booking, float $booking_amount, $provider_id)
+    private function update_admin_commission($booking, float $booking_amount, $provider_id): void
     {
         $service_cost = $booking['total_booking_amount'] - $booking['total_tax_amount'] + $booking['total_discount_amount'] + $booking['total_campaign_discount_amount'] + $booking['total_coupon_discount_amount'];
 
@@ -957,7 +1142,14 @@ trait BookingTrait
         $customer_referral_earning = business_config('customer_referral_earning', 'customer_config')->live_values ?? 0;
         $amount = business_config('referral_value_per_currency_unit', 'customer_config')->live_values ?? 0;
 
-        if ($customer_referral_earning == 1) referral_earning_transaction_after_booking_complete($referred_by_user, $amount);
+        if ($customer_referral_earning == 1) {
+            referral_earning_transaction_after_booking_complete($referred_by_user, $amount);
+            $user = User::where('id', $user_id)->first();
+            $title = with_currency_symbol($amount) . ' ' . get_push_notification_message('referral_earning', 'customer_notification', $user?->current_language_key);
+            if ($title && $user->fcm_token) {
+                device_notification($user->fcm_token, $title, null, null, null, 'wallet', null, $user->id);
+            }
+        }
     }
 
     /**
@@ -982,6 +1174,15 @@ trait BookingTrait
         $point = $point_per_currency_unit->live_values * $point_amount;
 
         loyalty_point_transaction($user_id, $point);
+
+        $user = User::where('id', $user_id)->first();
+        $title = $point . ' ' . get_push_notification_message('loyalty_point', 'customer_notification', $user?->current_language_key);
+        $data_info = [
+            'user_name' => $user?->first_name . ' ' . $user?->last_name,
+        ];
+        if ($title && $user->fcm_token) {
+            device_notification($user->fcm_token, $title, null, null, null, 'loyalty_point', null, $user->id, $data_info);
+        }
     }
 
 

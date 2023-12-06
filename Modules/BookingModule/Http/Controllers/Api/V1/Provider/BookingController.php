@@ -90,19 +90,23 @@ class BookingController extends Controller
                 $query->where('provider_id', $request->user()->provider->id);
             })
             ->when($request['booking_status'] == 'pending', function ($query) use ($request, $max_booking_amount) {
-                $query->ofBookingStatus($request['booking_status'])
-                    ->whereIn('sub_category_id', $this->subscribed_sub_categories)
-                    ->where('zone_id', $request->user()->provider->zone_id)
-                    ->when($max_booking_amount > 0, function($query) use ($max_booking_amount) {
-                        $query->where(function ($query) use ($max_booking_amount) {
-                            $query->where('payment_method', 'cash_after_service')
-                                ->where(function ($query) use ($max_booking_amount) {
-                                    $query->where('is_verified', 1)
-                                        ->orWhere('total_booking_amount', '<=', $max_booking_amount);
-                                })
-                                ->orWhere('payment_method', '<>', 'cash_after_service');
+                if (!$request->user()?->provider?->is_suspended || !business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values) {
+                    $query->ofBookingStatus($request['booking_status'])
+                        ->whereIn('sub_category_id', $this->subscribed_sub_categories)
+                        ->where('zone_id', $request->user()->provider->zone_id)
+                        ->when($max_booking_amount > 0, function ($query) use ($max_booking_amount) {
+                            $query->where(function ($query) use ($max_booking_amount) {
+                                $query->where('payment_method', 'cash_after_service')
+                                    ->where(function ($query) use ($max_booking_amount) {
+                                        $query->where('is_verified', 1)
+                                            ->orWhere('total_booking_amount', '<=', $max_booking_amount);
+                                    })
+                                    ->orWhere('payment_method', '<>', 'cash_after_service');
+                            });
                         });
-                    });
+                }else{
+                    $query->whereNull('id');
+                }
             })
             ->when($request['booking_status'] == 'accepted', function ($query) use ($request, $max_booking_amount) {
                 $query->ofBookingStatus($request['booking_status'])
@@ -183,7 +187,7 @@ class BookingController extends Controller
      * @param string $id
      * @return JsonResponse
      */
-    public function show(Request $request, string $id)
+    public function show(Request $request, string $id): JsonResponse
     {
         $booking = $this->booking->with([
             'detail.service', 'schedule_histories.user', 'status_histories.user', 'service_address', 'customer', 'provider', 'zone', 'serviceman.user', 'booking_partial_payments'
@@ -206,6 +210,13 @@ class BookingController extends Controller
     {
         $booking = $this->booking->where('id', $booking_id)->whereNull('provider_id')->first();
         if (isset($booking)) {
+
+            $provider = $request->user()->provider;
+
+            if ($provider?->is_suspended == 1 && business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values){
+                return response()->json(DEFAULT_SUSPEND_200, 404);
+            }
+
             $booking->provider_id = $request->user()->provider->id;
             $booking->booking_status = 'accepted';
 
@@ -377,7 +388,7 @@ class BookingController extends Controller
         }
 
         $fcm_token = $booking?->customer?->fcm_token;
-        $title = translate('Your booking verification OTP is') . ' ' . $booking->booking_otp;
+        $title = get_push_notification_message('otp', 'customer_notification', $booking?->customer?->current_language_key) . ' ' . $booking->booking_otp;
 
         if ($fcm_token) {
             device_notification($fcm_token, $title, null, null, $booking->id, 'booking', null, $booking?->customer?->id);

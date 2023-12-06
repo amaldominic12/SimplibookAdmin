@@ -16,6 +16,24 @@
                             <form action="{{route('admin.coupon.update',[$coupon->id])}}" method="POST">
                                 @method('PUT')
                                 @csrf
+                                @php($language= Modules\BusinessSettingsModule\Entities\BusinessSettings::where('key_name','system_language')->first())
+                                @php($default_lang = str_replace('_', '-', app()->getLocale()))
+                                @if($language)
+                                    <ul class="nav nav-tabs mb-4">
+                                        <li class="nav-item">
+                                            <a class="nav-link lang_link active"
+                                               href="#"
+                                               id="default-link">{{translate('default')}}</a>
+                                        </li>
+                                        @foreach ($language?->live_values as $lang)
+                                            <li class="nav-item">
+                                                <a class="nav-link lang_link"
+                                                   href="#"
+                                                   id="{{ $lang['code'] }}-link">{{ get_language_name($lang['code']) }}</a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
                                 <div class="coupon-type">
                                     <div class="row">
                                         <div class="col-lg-6">
@@ -79,15 +97,52 @@
                                         </div>
                                     </div>
 
-                                    <div class="mb-30">
-                                        <div class="form-floating">
-                                            <input type="text" class="form-control" name="discount_title"
-                                                   placeholder="{{translate('discount_title')}} *"
-                                                   value="{{$coupon->discount->discount_title}}"
-                                                   required="">
-                                            <label>{{translate('discount_title')}} *</label>
+{{--                                    <div class="mb-30">--}}
+{{--                                        <div class="form-floating">--}}
+{{--                                            <input type="text" class="form-control" name="discount_title"--}}
+{{--                                                   placeholder="{{translate('discount_title')}} *"--}}
+{{--                                                   value="{{$coupon->discount->discount_title}}"--}}
+{{--                                                   required="">--}}
+{{--                                            <label>{{translate('discount_title')}} *</label>--}}
+{{--                                        </div>--}}
+{{--                                    </div>--}}
+                                    @if ($language)
+                                        <div class="form-floating mb-30 lang-form" id="default-form">
+                                            <input type="text" name="discount_title[]" class="form-control"
+                                                   placeholder="{{translate('discount_title')}}" value="{{$discount?->getRawOriginal('discount_title')}}">
+                                            <label>{{translate('discount_title')}} ({{ translate('default') }})</label>
                                         </div>
-                                    </div>
+                                        <input type="hidden" name="lang[]" value="default">
+                                        @foreach ($language?->live_values as $lang)
+                                                <?php
+                                                if (count($discount['translations'])) {
+                                                    $translate = [];
+                                                    foreach ($discount['translations'] as $t) {
+                                                        if ($t->locale == $lang['code'] && $t->key == "discount_title") {
+                                                            $translate[$lang['code']]['discount_title'] = $t->value;
+                                                        }
+                                                    }
+                                                }
+                                                ?>
+
+                                            <div class="form-floating mb-30 d-none lang-form" id="{{$lang['code']}}-form">
+                                                <input type="text" name="discount_title[]" class="form-control"
+                                                       placeholder="{{translate('discount_title')}}"
+                                                       value="{{$translate[$lang['code']]['discount_title'] ?? ''}}"
+                                                       {{$lang['status'] == '1' ? 'required':''}}
+                                                       @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>
+                                                <label>{{translate('discount_title')}} ({{strtoupper($lang['code'])}})</label>
+                                            </div>
+                                            <input type="hidden" name="lang[]" value="{{$lang['code']}}">
+                                        @endforeach
+                                    @else
+                                        <div class="form-floating mb-30">
+                                            <input type="text" name="discount_title[]" class="form-control"
+                                                   placeholder="{{translate('discount_title')}}" value="value="{{$discount->discount_title}}"" required>
+                                            <label>{{translate('discount_title')}}</label>
+                                        </div>
+                                        <input type="hidden" name="lang[]" value="default">
+                                    @endif
                                     <div class="mb-30" id="category_selector"
                                          style="display: {{($coupon->discount->discount_type=='category' || $coupon->discount->discount_type=='mixed')?'block':'none'}}">
                                         <select class="category-select theme-input-style w-100" name="category_ids[]"
@@ -301,5 +356,19 @@
             placeholder: "Select Zone",
         });
 
+    </script>
+
+    <script>
+        $(".lang_link").on('click', function (e) {
+            e.preventDefault();
+            $(".lang_link").removeClass('active');
+            $(".lang-form").addClass('d-none');
+            $(this).addClass('active');
+
+            let form_id = this.id;
+            let lang = form_id.substring(0, form_id.length - 5);
+            console.log(lang);
+            $("#" + lang + "-form").removeClass('d-none');
+        });
     </script>
 @endpush

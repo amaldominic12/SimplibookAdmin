@@ -39,10 +39,6 @@
                                                         {{$distance . ' ' . translate('away from you')}}
                                                     @endif
                                                 </p>
-                                                <div class="d-flex align-items-center gap-2 mb-2">
-                                                    <span class="material-icons">phone_iphone</span>
-                                                    <a href="tel:{{$post?->customer?->phone}}">{{$post?->customer?->phone}}</a>
-                                                </div>
                                                 <div class="d-flex align-items-center gap-2">
                                                     <span class="material-icons">map</span>
                                                     <p>{{Str::limit($post?->service_address?->address??translate('not_available'), 100)}}</p>

@@ -2,6 +2,7 @@
 
 namespace Modules\Auth\Http\Controllers\Api\V1;
 
+use Exception;
 use Firebase\JWT\JWT;
 use GuzzleHttp\Client;
 use Carbon\CarbonInterval;
@@ -67,7 +68,7 @@ class LoginController extends Controller
 
         $user = $this->user->where(['phone' => $request['email_or_phone']])
             ->orWhere('email', $request['email_or_phone'])
-            ->ofType(PROVIDER_USER_TYPES)->first();
+            ->ofType(['provider-admin'])->first();
 
         //not found
         if (!isset($user)) {
@@ -138,7 +139,7 @@ class LoginController extends Controller
      * Display a listing of the resource.
      * @param Request $request
      * @return JsonResponse
-     * @throws \Exception
+     * @throws Exception
      */
     public function customer_login(Request $request): JsonResponse
     {
@@ -255,6 +256,7 @@ class LoginController extends Controller
      * Display a listing of the resource.
      * @param Request $request
      * @return JsonResponse
+     * @throws Exception
      */
     public function serviceman_login(Request $request): JsonResponse
     {
@@ -377,7 +379,7 @@ class LoginController extends Controller
                 $claims = explode('.', $res['id_token'])[1];
                 $data = json_decode(base64_decode($claims),true);
             }
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             return response()->json(response_formatter(DEFAULT_401), 200);
         }
 

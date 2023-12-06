@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Modules\BusinessSettingsModule\Entities\Translation;
 
 class Coupon extends Model
 {
@@ -32,7 +34,6 @@ class Coupon extends Model
     {
         return $this->hasMany(CouponCustomer::class, 'coupon_id');
     }
-
     protected static function booted()
     {
         static::addGlobalScope('zone_wise_data', function (Builder $builder) {

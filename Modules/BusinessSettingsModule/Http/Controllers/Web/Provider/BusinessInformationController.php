@@ -61,8 +61,10 @@ class BusinessInformationController extends Controller
             ]);
         }
 
+        $provider_id = auth()->user()->provider->id;
+
         $data_values = $this->provider_setting->where('settings_type', 'serviceman_config')->get();
-        return view('businesssettingsmodule::provider.business', compact('data_values'));
+        return view('businesssettingsmodule::provider.business', compact('data_values', 'provider_id'));
     }
 
     /**

@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
+use Modules\BusinessSettingsModule\Entities\Translation;
 use Modules\CategoryManagement\Entities\Category;
 use Modules\ProviderManagement\Entities\SubscribedService;
 use Modules\ZoneManagement\Entities\Zone;
@@ -70,18 +71,78 @@ class SubCategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|unique:categories',
+            'name.0' => 'required',
             'parent_id' => 'required|uuid',
             'short_description' => 'required',
+            'short_description.0' => 'required',
             'image' => 'required|image|mimes:jpeg,jpg,png,gif|max:10240',
+        ],
+        [
+            'name.0.required'=>translate('default_name_is_required'),
+            'short_description.0.required'=>translate('default_short_description_is_required'),
         ]);
 
         $category = $this->category;
-        $category->name = $request->name;
+        $category->name = $request->name[array_search('default', $request->lang)];
         $category->image = file_uploader('category/', 'png', $request->file('image'));
         $category->parent_id = $request['parent_id'];
         $category->position = 2;
-        $category->description = $request['short_description'];
+        $category->description = $request->short_description[array_search('default', $request->lang)];
         $category->save();
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request->name[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                            'translationable_id' => $category->id,
+                            'locale' => $key,
+                            'key' => 'name'],
+                        ['value' => $category->name]
+                    );
+                }
+            } else {
+
+                if ($request->name[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                            'translationable_id' => $category->id,
+                            'locale' => $key,
+                            'key' => 'name'],
+                        ['value' => $request->name[$index]]
+                    );
+                }
+            }
+
+            if ($default_lang == $key && !($request->short_description[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                            'translationable_id' => $category->id,
+                            'locale' => $key,
+                            'key' => 'description'],
+                        ['value' => $category->description]
+                    );
+                }
+            } else {
+
+                if ($request->short_description[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                            'translationable_id' => $category->id,
+                            'locale' => $key,
+                            'key' => 'description'],
+                        ['value' => $request->short_description[$index]]
+                    );
+                }
+            }
+        }
 
         Toastr::success(CATEGORY_STORE_200['message']);
         return back();
@@ -104,7 +165,7 @@ class SubCategoryController extends Controller
      */
     public function edit(string $id): View|Factory|RedirectResponse|Application
     {
-        $sub_category = $this->category->ofType('sub')->where('id', $id)->first();
+        $sub_category = $this->category->withoutGlobalScope('translate')->ofType('sub')->where('id', $id)->first();
         if (isset($sub_category)) {
             $main_categories = $this->category->ofType('main')->orderBy('name')->get(['id', 'name']);
             return view('categorymanagement::admin.sub-category.edit', compact('sub_category', 'main_categories'));
@@ -123,22 +184,83 @@ class SubCategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|unique:categories,name,' . $id,
+            'name.0' => 'required',
             'parent_id' => 'required|uuid',
             'short_description' => 'required',
-        ]);
+            'short_description.0' => 'required',
+        ],
+        [
+            'name.0.required'=>translate('default_name_is_required'),
+            'short_description.0.required'=>translate('default_short_description_is_required'),
+        ]
+        );
 
         $category = $this->category->ofType('sub')->where('id', $id)->first();
         if (!$category) {
             return response()->json(response_formatter(CATEGORY_204), 204);
         }
-        $category->name = $request->name;
+        $category->name = $request->name[array_search('default', $request->lang)];
         if ($request->has('image')) {
             $category->image = file_uploader('category/', 'png', $request->file('image'), $category->image);
         }
         $category->parent_id = $request['parent_id'];
         $category->position = 2;
-        $category->description = $request['short_description'];
+        $category->description = $request->short_description[array_search('default', $request->lang)];;
         $category->save();
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request->name[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                            'translationable_id' => $category->id,
+                            'locale' => $key,
+                            'key' => 'name'],
+                        ['value' => $category->name]
+                    );
+                }
+            } else {
+
+                if ($request->name[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                            'translationable_id' => $category->id,
+                            'locale' => $key,
+                            'key' => 'name'],
+                        ['value' => $request->name[$index]]
+                    );
+                }
+            }
+
+            if ($default_lang == $key && !($request->short_description[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                            'translationable_id' => $category->id,
+                            'locale' => $key,
+                            'key' => 'description'],
+                        ['value' => $category->description]
+                    );
+                }
+            } else {
+
+                if ($request->short_description[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\CategoryManagement\Entities\Category',
+                            'translationable_id' => $category->id,
+                            'locale' => $key,
+                            'key' => 'description'],
+                        ['value' => $request->short_description[$index]]
+                    );
+                }
+            }
+        }
 
         Toastr::success(CATEGORY_UPDATE_200['message']);
         return back();
@@ -150,12 +272,13 @@ class SubCategoryController extends Controller
      * @param $id
      * @return RedirectResponse
      */
-    public function destroy(Request $request,$id): RedirectResponse
+    public function destroy(Request $request, $id): RedirectResponse
     {
         $category = $this->category->where('id', $id)->ofType($this)->first();
         if ($category) {
             file_remover('category/', $category->image);
             DB::transaction(function () use ($category, $id) {
+                $category->translations()->delete();
                 $category->delete();
                 $this->subscribed_service->where('sub_category_id', $id)->delete();
             });
@@ -200,7 +323,7 @@ class SubCategoryController extends Controller
             })
             ->ofType('sub')->latest()->get();
 
-        return (new FastExcel($items))->download(time().'-file.xlsx');
+        return (new FastExcel($items))->download(time() . '-file.xlsx');
     }
 
 }

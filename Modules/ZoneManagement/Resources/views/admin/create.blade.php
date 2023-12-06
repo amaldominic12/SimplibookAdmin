@@ -53,12 +53,57 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-7">
-                                        <div class="form-floating mb-30">
-                                            <input type="text" class="form-control" id="floatingInput" name="name"
-                                                   placeholder="{{translate('zone_name')}}" required
-                                                   value="{{old('name')}}">
-                                            <label for="floatingInput">{{translate('zone_name')}}</label>
-                                        </div>
+                                        @php($language= Modules\BusinessSettingsModule\Entities\BusinessSettings::where('key_name','system_language')->first())
+                                        @php($default_lang = str_replace('_', '-', app()->getLocale()))
+                                        @if($language)
+                                            <ul class="nav nav--tabs border-color-primary mb-4">
+                                                <li class="nav-item">
+                                                    <a class="nav-link lang_link active"
+                                                       href="#"
+                                                       id="default-link">{{translate('default')}}</a>
+                                                </li>
+                                                @foreach ($language?->live_values as $lang)
+                                                    <li class="nav-item">
+                                                        <a class="nav-link lang_link"
+                                                           href="#"
+                                                           id="{{ $lang['code'] }}-link">{{ get_language_name($lang['code']) }}</a>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
+                                        @if($language)
+                                            <div class="form-floating mb-30 lang-form" id="default-form">
+                                                <input type="text" name="name[]" class="form-control"
+                                                       placeholder="{{translate('zone_name')}}">
+                                                <label>{{translate('zone_name')}} ({{ translate('default') }}
+                                                    )</label>
+                                            </div>
+                                            <input type="hidden" name="lang[]" value="default">
+                                            @foreach ($language?->live_values as $lang)
+                                                <div class="form-floating mb-30 d-none lang-form"
+                                                     id="{{$lang['code']}}-form">
+                                                    <input type="text" name="name[]" class="form-control"
+                                                           placeholder="{{translate('zone_name')}}"
+                                                           {{$lang['status'] == '1' ? 'required':''}}
+                                                           @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>
+                                                    <label>{{translate('zone_name')}}
+                                                        ({{strtoupper($lang['code'])}})</label>
+                                                </div>
+                                                <input type="hidden" name="lang[]" value="{{$lang['code']}}">
+                                            @endforeach
+                                        @else
+                                            <div class="lang-form">
+                                                <div class="mb-30">
+                                                    <div class="form-floating">
+                                                        <input type="text" class="form-control" name="name[]"
+                                                               placeholder="{{translate('zone_name')}} *"
+                                                               required="" value="{{old('name')}}">
+                                                        <label>{{translate('zone_name')}} *</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <input type="hidden" name="lang[]" value="default">
+                                        @endif
 
                                         <div class="form-group mb-3" style="display: none">
                                             <label class="input-label"
@@ -374,5 +419,19 @@
             lastpolygon.setMap(null);
             $('#coordinates').val(null);
         })
+    </script>
+
+    <script>
+        $(".lang_link").on('click', function (e) {
+            e.preventDefault();
+            $(".lang_link").removeClass('active');
+            $(".lang-form").addClass('d-none');
+            $(this).addClass('active');
+
+            let form_id = this.id;
+            let lang = form_id.substring(0, form_id.length - 5);
+            console.log(lang);
+            $("#" + lang + "-form").removeClass('d-none');
+        });
     </script>
 @endpush

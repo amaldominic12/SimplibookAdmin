@@ -1,8 +1,9 @@
 <?php
 
 if (!function_exists('device_notification')) {
-    function device_notification($fcm_token, $title, $description, $image, $booking_id, $type='status', $channel_id = null, $user_id = null): bool|string
+    function device_notification($fcm_token, $title, $description, $image, $booking_id, $type='status', $channel_id = null, $user_id = null, $data=null): bool|string
     {
+        $title = text_variable_data_format($title, $booking_id, $type, $data);
         $config = business_config('push_notification', 'third_party');
         $url = "https://fcm.googleapis.com/fcm/send";
         $header = array("authorization: key=" . $config->live_values['server_key'],
@@ -82,8 +83,11 @@ if (!function_exists('topic_notification')) {
 
 //bidding notification
 if (!function_exists('device_notification_for_bidding')) {
-    function device_notification_for_bidding($fcm_token, $title, $description, $image, $type='bidding', $booking_id = null, $post_id = null, $provider_id = null): bool|string
+    function device_notification_for_bidding($fcm_token, $title, $description, $image, $type='bidding', $booking_id = null, $post_id = null, $provider_id = null, $data=null): bool|string
     {
+
+        $title = text_variable_data_format($title, $booking_id, $type, $data);
+
         $config = business_config('push_notification', 'third_party');
         $url = "https://fcm.googleapis.com/fcm/send";
         $header = array("authorization: key=" . $config->live_values['server_key'],

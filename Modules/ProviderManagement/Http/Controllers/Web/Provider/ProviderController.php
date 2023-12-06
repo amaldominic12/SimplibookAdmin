@@ -14,9 +14,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Modules\BidModule\Entities\IgnoredPost;
@@ -34,6 +36,7 @@ use Modules\ReviewModule\Entities\Review;
 use Modules\ServiceManagement\Entities\Service;
 use Modules\TransactionModule\Entities\Account;
 use Modules\TransactionModule\Entities\Transaction;
+use Modules\TransactionModule\Entities\WithdrawalMethod;
 use Modules\UserManagement\Entities\Serviceman;
 use Modules\UserManagement\Entities\User;
 use Modules\ZoneManagement\Entities\Zone;
@@ -50,6 +53,8 @@ class ProviderController extends Controller
     private Review $review;
     private Transaction $transaction;
     private ChannelList $channelList;
+    protected WithdrawalMethod $withdrawal_method;
+
     private SubscribedService $subscribed_service;
     private BankDetail $bank_detail;
     protected BusinessSettings $business_settings;
@@ -58,12 +63,13 @@ class ProviderController extends Controller
 
     protected $google_map;
 
-    public function __construct(ChannelList $channelList, Transaction $transaction, SubscribedService $subscribedService, BankDetail $bankDetail, Provider $provider, Account $account, User $user, PushNotification $pushNotification, Serviceman $serviceman, Booking $booking, Zone $zone, Review $review, Service $service, SubscribedService $subscribed_service, BankDetail $bank_detail, BusinessSettings $business_settings, BookingDetailsAmount $booking_details_amount)
+    public function __construct(ChannelList $channelList, Transaction $transaction, SubscribedService $subscribedService, BankDetail $bankDetail, Provider $provider, Account $account, WithdrawalMethod $withdrawal_method , User $user, PushNotification $pushNotification, Serviceman $serviceman, Booking $booking, Zone $zone, Review $review, Service $service, SubscribedService $subscribed_service, BankDetail $bank_detail, BusinessSettings $business_settings, BookingDetailsAmount $booking_details_amount)
     {
         $this->bank_detail = $bankDetail;
         $this->provider = $provider;
         $this->user = $user;
         $this->account = $account;
+        $this->withdrawal_method = $withdrawal_method;
         $this->push_notification = $pushNotification;
         $this->serviceman = $serviceman;
         $this->subscribedService = $subscribedService;
@@ -201,15 +207,19 @@ class ProviderController extends Controller
             $query->select('id', 'name', 'thumbnail');
         }])
             ->whereIn('sub_category_id', $sub_category_ids)
-            ->when($max_booking_amount > 0, function($query) use ($max_booking_amount) {
-                $query->where(function ($query) use ($max_booking_amount) {
-                    $query->where('payment_method', 'cash_after_service')
-                        ->where(function ($query) use ($max_booking_amount) {
-                            $query->where('is_verified', 1)
-                                ->orWhere('total_booking_amount', '<=', $max_booking_amount);
-                        })
-                        ->orWhere('payment_method', '<>', 'cash_after_service');
-                });
+            ->when($max_booking_amount > 0, function($query) use ($max_booking_amount, $request) {
+                if (!$request->user()?->provider?->is_suspended || !business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values) {
+                    $query->where(function ($query) use ($max_booking_amount) {
+                        $query->where('payment_method', 'cash_after_service')
+                            ->where(function ($query) use ($max_booking_amount) {
+                                $query->where('is_verified', 1)
+                                    ->orWhere('total_booking_amount', '<=', $max_booking_amount);
+                            })
+                            ->orWhere('payment_method', '<>', 'cash_after_service');
+                    });
+                }else {
+                    $query->whereNull('id');
+                }
             })
             ->where('booking_status', 'pending')
             ->latest()
@@ -394,6 +404,22 @@ class ProviderController extends Controller
         if ($page_type == 'overview') {
             $page_type = $request['page_type'];
 
+            //payment gateways
+            $is_published = 0;
+            try {
+                $full_data = include('Modules/Gateways/Addon/info.php');
+                $is_published = $full_data['is_published'] == 1 ? 1 : 0;
+            } catch (\Exception $exception) {}
+
+            $payment_gateways = collect($this->getPaymentMethods())
+                ->filter(function ($query) use ($is_published) {
+                    if (!$is_published) {
+                        return in_array($query['gateway'], array_column(PAYMENT_METHODS, 'key'));
+                    } else return $query;
+                })->map(function ($query) {
+                    $query['label'] = ucwords(str_replace('_', ' ', $query['gateway']));
+                    return $query;
+                })->values();
             $provider = $this->provider->with('owner.account')->withCount(['bookings'])->where('user_id', $request->user()->id)->first();
             $booking_overview = DB::table('bookings')->where('provider_id', $request->user()->provider->id)
                 ->select('booking_status', DB::raw('count(*) as total'))
@@ -414,7 +440,49 @@ class ProviderController extends Controller
             $account = $this->account->where('user_id', $request->user()->id)->first();
             $total_earning = $account['received_balance'] + $account['total_withdrawn'];
 
-            return view('providermanagement::provider.account.overview', compact('page_type', 'provider', 'total', 'total_earning'));
+            //adjust &
+            $withdraw_request_amount = [
+                'minimum' => (float)(business_config('minimum_withdraw_amount', 'business_information'))->live_values ?? null,
+                'maximum' => (float)(business_config('maximum_withdraw_amount', 'business_information'))->live_values ?? null,
+            ];
+
+            //random value generate
+            $min = $withdraw_request_amount['minimum']; // Set the minimum value
+            $max = $withdraw_request_amount['maximum']; // Set the maximum value
+
+            // Generate random numbers
+            $mid = round(($min + $max) / 2 / 10) * 10; // Middle of min and max
+            $mid1 = round(($min + $mid) / 2 / 10) * 10; // Middle of min and mid
+            $mid2 = round(($mid + $max) / 2 / 10) * 10; // Middle of mid and max
+            $num4 = ceil($max / 10) * 10; // Maximum value
+
+            if ($min == 0 && $max == 0) {
+                $num5 = 0;
+            } else {
+                do {
+                    $num5 = floor(rand($min, $max) / 10) * 10; // Random value between min and max
+                } while (in_array($num5, array($mid, $mid1, $mid2, $num4)));
+            }
+
+            // Store generated numbers in an array
+            $withdraw_request_amount['random'] = array($mid, $mid1, $num5, $mid2, $num4);
+            //end
+
+            $account = $this->account->where('user_id', $request->user()->id)->first();
+            $receivable = $account->account_receivable;
+            $payable = $account->account_payable;
+
+            if ($receivable > $payable) {
+                $collectable_cash = $receivable - $payable ?? 0;
+            } elseif ($payable > $receivable) {
+                $collectable_cash = $payable - $receivable ?? 0;
+            }else{
+                $collectable_cash = 0 ;
+            }
+
+            $withdrawal_methods = $this->withdrawal_method->ofStatus(1)->get();
+
+            return view('providermanagement::provider.account.overview', compact('page_type', 'provider', 'total', 'total_earning', 'payment_gateways', 'collectable_cash', 'withdrawal_methods', 'withdraw_request_amount', 'withdraw_request_amount'));
 
         } //commission-info
         elseif ($page_type == 'commission-info') {
@@ -455,6 +523,26 @@ class ProviderController extends Controller
 
 
         Toastr::error(translate('no_data_found'));
+        return back();
+    }
+
+    public function adjust(Request $request): RedirectResponse
+    {
+        $provider = Provider::where('user_id', $request->user()->id)->first();
+        $account = $this->account->where('user_id', $request->user()->id)->first();
+        $receivable = $account->account_receivable;
+        $payable = $account->account_payable;
+
+        if ($receivable == $payable){
+
+            withdraw_request_accept_for_adjust_transaction($request->user()->id, $receivable);
+            collect_cash_transaction($provider->id, $payable);
+
+            Toastr::success(translate('account_amount_adjusted_successfully'));
+            return redirect()->route('provider.account_info', ['page_type'=>'overview']);
+        }
+
+        Toastr::error(DEFAULT_204['message']);
         return back();
     }
 
@@ -518,7 +606,7 @@ class ProviderController extends Controller
     public function profile_info(Request $request): Renderable
     {
         $provider = $this->provider->with(['owner.addresses', 'zone'])->where('user_id', $request->user()->id)->first();
-        $zones = $this->zone->select('id', 'name')->get();
+        $zones = $this->zone->ofStatus(1)->select('id', 'name')->get();
         return view('providermanagement::profile-update', compact('provider', 'zones'));
     }
 
@@ -540,8 +628,8 @@ class ProviderController extends Controller
             'confirm_password' => isset($request->password) ? 'required|same:password' : '',
 
             'company_name' => 'required',
-            'company_email' => 'required|unique:providers,id,' . $request->user()->provider->id,
-            'company_phone' => 'required|unique:providers,id,' . $request->user()->provider->id,
+            'company_email' => 'required|email',
+            'company_phone' => 'required',
             'company_address' => 'required',
             'logo' => 'image|mimes:jpeg,jpg,png,gif|max:10000',
 
@@ -620,5 +708,43 @@ class ProviderController extends Controller
             ->latest()
             ->get();
         return (new FastExcel($items))->download(time() . '-file.xlsx');
+    }
+
+    private function getPaymentMethods(): array
+    {
+        // Check if the addon_settings table exists
+        if (!Schema::hasTable('addon_settings')) {
+            return [];
+        }
+
+        $methods = DB::table('addon_settings')->where('settings_type', 'payment_config')->get();
+        $env = env('APP_ENV') == 'live' ? 'live' : 'test';
+        $credentials = $env . '_values';
+
+        $data = [];
+        foreach ($methods as $method) {
+            $credentialsData = json_decode($method->$credentials);
+            $additional_data = json_decode($method->additional_data);
+            if ($credentialsData->status == 1) {
+                $data[] = [
+                    'gateway' => $method->key_name,
+                    'gateway_image' => $additional_data?->gateway_image
+                ];
+            }
+        }
+        return $data;
+    }
+
+    public function delete_provider(Request $request): RedirectResponse
+    {
+        $provider = $this->provider::where('user_id', $request->user()->id)->first();
+        if ($provider) {
+            $provider->delete();
+            $provider->owner->delete();
+            Toastr::success(DEFAULT_DELETE_200['message']);
+            Auth::logout();
+        }
+        Toastr::success(DEFAULT_204['message']);
+        return back();
     }
 }

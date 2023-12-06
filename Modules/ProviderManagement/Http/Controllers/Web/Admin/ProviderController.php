@@ -122,15 +122,15 @@ class ProviderController extends Controller
 
             'account_first_name' => 'required',
             'account_last_name' => 'required',
-            'account_email' => 'required|email|unique:users,email',
-            'account_phone' => 'required|unique:users,phone',
+            'account_email' => 'required|email',
+            'account_phone' => 'required',
             'password' => 'required|min:8',
             'confirm_password' => 'required|same:password',
 
             'company_name' => 'required',
-            'company_phone' => 'required|unique:providers',
+            'company_phone' => 'required',
             'company_address' => 'required',
-            'company_email' => 'required|email|unique:providers',
+            'company_email' => 'required|email',
             'logo' => 'required|image|mimes:jpeg,jpg,png,gif',
 
             'identity_type' => 'required|in:passport,driving_license,nid,trade_license,company_id',
@@ -142,6 +142,15 @@ class ProviderController extends Controller
 
             'zone_id' => 'required|uuid',
         ]);
+
+        if (User::where('email', $request['account_email'])->first()) {
+            Toastr::error(translate('Email already taken'));
+            return back();
+        }
+        if (User::where('phone', $request['account_phone'])->first()) {
+            Toastr::error(translate('Phone already taken'));
+            return back();
+        }
 
         $identity_images = [];
         if ($request->has('identity_images')) {
@@ -395,7 +404,7 @@ class ProviderController extends Controller
      * @param string $id
      * @return Application|Factory|View
      */
-    public function edit(string $id)
+    public function edit(string $id): View|Factory|Application
     {
         $zones = $this->zone->ofStatus(1)->get();
         $provider = $this->provider->with(['owner', 'zone'])->find($id);
@@ -422,13 +431,13 @@ class ProviderController extends Controller
             'confirm_password' => !is_null($request->password) ? 'required|same:password' : '',
             'account_first_name' => 'required',
             'account_last_name' => 'required',
-            'account_email' => 'required|unique:users,email,' . $provider->user_id . ',id',
-            'account_phone' => 'required|unique:users,phone,' . $provider->user_id . ',id',
+            'account_email' => 'required|email',
+            'account_phone' => 'required',
 
             'company_name' => 'required',
-            'company_phone' => 'required|unique:providers,company_phone,' . $provider->id . ',id',
+            'company_phone' => 'required',
             'company_address' => 'required',
-            'company_email' => 'required|email|unique:providers,company_email,' . $provider->id . ',id',
+            'company_email' => 'required|email',
             'logo' => 'image|mimes:jpeg,jpg,png,gif|max:10000',
 
             'identity_type' => 'required|in:passport,driving_license,nid,trade_license,company_id',
@@ -440,6 +449,15 @@ class ProviderController extends Controller
 
             'zone_id' => 'required|uuid'
         ])->validate();
+
+        if (User::where('email', $request['account_email'])->where('id', '!=', $provider->user_id)->exists()) {
+            Toastr::error(translate('Email already taken'));
+            return back();
+        }
+        if (User::where('phone', $request['account_phone'])->where('id', '!=', $provider->user_id)->exists()) {
+            Toastr::error(translate('Phone already taken'));
+            return back();
+        }
 
         $identity_images = [];
         if (!is_null($request->identity_images)) {
@@ -508,6 +526,12 @@ class ProviderController extends Controller
                         file_remover('provider/identity/', $image);
                     }
                 }
+
+                // Disable is_active for associated servicemen users
+                $provider->servicemen->each(function ($serviceman) {
+                    $serviceman->user->update(['is_active' => 0]);
+                });
+
                 $provider->owner()->delete();
             }
             $providers->delete();
@@ -528,7 +552,9 @@ class ProviderController extends Controller
     {
         $provider = $this->provider->where('id', $id)->first();
         $this->provider->where('id', $id)->update(['is_active' => !$provider->is_active]);
-        $this->owner->where('id', $provider->user_id)->update(['is_active' => !$provider->is_active]);
+        $owner = $this->owner->where('id', $provider->user_id)->first();
+        $owner->is_active = !$provider->is_active;
+        $owner->save();
 
         return response()->json(DEFAULT_STATUS_UPDATE_200, 200);
     }
@@ -536,9 +562,37 @@ class ProviderController extends Controller
     /**
      * Remove the specified resource from storage.
      * @param $id
+     * @return JsonResponse
+     */
+    public function suspend_update($id): JsonResponse
+    {
+        $provider = $this->provider->where('id', $id)->first();
+        $this->provider->where('id', $id)->update(['is_suspended' => !$provider->is_suspended]);
+        $provider_info = $this->provider->where('id', $id)->first();
+
+        if ($provider_info?->is_suspended == '1'){
+            $provider = $provider_info?->owner;
+            $title = get_push_notification_message('provider_suspend', 'provider_notification', $provider?->current_language_key);
+            if ($provider?->fcm_token && $title){
+                device_notification($provider?->fcm_token, $title, null, null, $provider_info->id, 'suspend');
+            }
+        }else{
+            $provider = $provider_info?->owner;
+            $title = get_push_notification_message('provider_suspension_remove', 'provider_notification', $provider?->current_language_key);
+            if ($provider?->fcm_token && $title){
+                device_notification($provider?->fcm_token, $title, null, null, $provider_info->id, 'suspend');
+            }
+        }
+
+        return response()->json(DEFAULT_SUSPEND_UPDATE_200, 200);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     * @param $id
      * @return RedirectResponse
      */
-    public function commission_update($id, Request $request)
+    public function commission_update($id, Request $request): RedirectResponse
     {
         $provider = $this->provider->where('id', $id)->first();
         $provider->commission_status = $request->commission_status == 'default' ? 0 : 1;
@@ -551,7 +605,7 @@ class ProviderController extends Controller
         return back();
     }
 
-    public function onboarding_request(Request $request)
+    public function onboarding_request(Request $request): Factory|View|Application
     {
         $status = $request->status == 'denied' ? 'denied' : 'onboarding';
         $search = $request['search'];
@@ -580,7 +634,7 @@ class ProviderController extends Controller
         return View('providermanagement::admin.provider.onboarding', compact('providers', 'search', 'status', 'providers_count'));
     }
 
-    public function update_approval($id, $status, Request $request)
+    public function update_approval($id, $status, Request $request): JsonResponse
     {
         if ($status == 'approve') {
             $this->provider->where('id', $id)->update(['is_active' => 1, 'is_approved' => 1]);
@@ -627,4 +681,152 @@ class ProviderController extends Controller
 
         return (new FastExcel($items))->download(time() . '-file.xlsx');
     }
+
+    public function available_provider_list(Request $request): JsonResponse
+    {
+        $sort_by = $request->sort_by ?? 'default';
+        $search = $request->search;
+        $sort_by = $request->sort_by;
+        $booking = $this->booking->where('id', $request->booking_id)->first();
+
+        if (business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values) {
+            $providers = $this->provider
+                ->when($request->has('search'), function ($query) use ($request) {
+                    $keys = explode(' ', $request['search']);
+                    return $query->where(function ($query) use ($keys) {
+                        foreach ($keys as $key) {
+                            $query->orWhere('company_phone', 'LIKE', '%' . $key . '%')
+                                ->orWhere('company_email', 'LIKE', '%' . $key . '%')
+                                ->orWhere('company_name', 'LIKE', '%' . $key . '%');
+                        }
+                    });
+                })
+                ->when($sort_by === 'top-rated', function ($query) {
+                    return $query->orderBy('avg_rating', 'desc');
+                })
+                ->when($sort_by === 'bookings-completed', function ($query) {
+                    $query->withCount(['bookings' => function ($query) {
+                        $query->where('booking_status', 'completed');
+                    }]);
+                    $query->orderBy('bookings_count', 'desc');
+                })
+                ->when($sort_by !== 'bookings-completed', function ($query) {
+                    return $query->withCount('bookings');
+                })
+                ->whereHas('subscribed_services', function ($query) use($request, $booking) {
+                    $query->where('sub_category_id', $booking->sub_category_id)->where('is_subscribed', 1);
+                })
+                ->where('is_suspended', 0)
+                ->withCount('reviews')
+                ->ofApproval(1)->ofStatus(1)->get();
+        }else{
+            $providers = $this->provider
+                ->when($request->has('search'), function ($query) use ($request) {
+                    $keys = explode(' ', $request['search']);
+                    return $query->where(function ($query) use ($keys) {
+                        foreach ($keys as $key) {
+                            $query->orWhere('company_phone', 'LIKE', '%' . $key . '%')
+                                ->orWhere('company_email', 'LIKE', '%' . $key . '%')
+                                ->orWhere('company_name', 'LIKE', '%' . $key . '%');
+                        }
+                    });
+                })
+                ->when($sort_by === 'top-rated', function ($query) {
+                    return $query->orderBy('avg_rating', 'desc');
+                })
+                ->when($sort_by === 'bookings-completed', function ($query) {
+                    $query->withCount(['bookings' => function ($query) {
+                        $query->where('booking_status', 'completed');
+                    }]);
+                    $query->orderBy('bookings_count', 'desc');
+                })
+                ->when($sort_by !== 'bookings-completed', function ($query) {
+                    return $query->withCount('bookings');
+                })
+                ->whereHas('subscribed_services', function ($query) use($request, $booking) {
+                    $query->where('sub_category_id', $booking->sub_category_id)->where('is_subscribed', 1);
+                })
+                ->withCount('reviews')
+                ->ofApproval(1)->ofStatus(1)->get();
+        }
+
+        $booking = $this->booking->with(['detail.service' => function ($query) {
+            $query->withTrashed();
+        }, 'detail.service.category', 'detail.service.subCategory', 'detail.variation', 'customer', 'provider', 'service_address', 'serviceman', 'service_address', 'status_histories.user'])->find($request->booking_id);
+
+        return response()->json([
+            'view' => view('bookingmodule::admin.booking.partials.details.provider-info-modal-data', compact('providers', 'booking', 'search', 'sort_by'))->render()
+        ]);
+    }
+
+    public function provider_info(Request $request): JsonResponse
+    {
+        $booking = $this->booking->where('id', $request->booking_id)->first();
+
+        return response()->json([
+            'view' => view('bookingmodule::admin.booking.partials.details._provider-data', compact('booking'))->render(),
+            'serviceman_view' => view('bookingmodule::admin.booking.partials.details._serviceman-data', compact('booking'))->render(),
+        ]);
+    }
+
+    public function reassign_provider(Request $request): JsonResponse
+    {
+
+        $booking = $this->booking->where('id', $request->booking_id)->first();
+
+        if (isset($booking)) {
+            $booking->provider_id = $request->provider_id;
+            $booking->serviceman_id = null;
+            $booking->save();
+
+            $fcm_token = $this->provider->with('owner')->whereId($booking->provider_id)->first()->owner->fcm_token ?? null;
+            $language_key = $this->provider->with('owner')->whereId($booking->provider_id)->first()->owner->current_language_key;
+            $booking_notification_status = business_config('booking', 'notification_settings')->live_values;
+
+            if (!is_null($fcm_token) && isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
+                $title =  get_push_notification_message('booking_accepted', 'provider_notification',$language_key);
+                device_notification($fcm_token, $title, null, null, $booking->id, 'booking');
+            }
+
+            $sort_by = $request->sort_by ?? 'default';
+            $search = $request->search;
+            $sort_by = $request->sort_by;
+            $providers = $this->provider
+                ->when($request->has('search'), function ($query) use ($request) {
+                    $keys = explode(' ', $request['search']);
+                    return $query->where(function ($query) use ($keys) {
+                        foreach ($keys as $key) {
+                            $query->orWhere('company_phone', 'LIKE', '%' . $key . '%')
+                                ->orWhere('company_email', 'LIKE', '%' . $key . '%')
+                                ->orWhere('company_name', 'LIKE', '%' . $key . '%');
+                        }
+                    });
+                })
+                ->when($sort_by === 'top-rated', function ($query) {
+                    return $query->orderBy('avg_rating', 'desc');
+                })
+                ->when($sort_by === 'bookings-completed', function ($query) {
+                    $query->withCount(['bookings' => function ($query) {
+                        $query->where('booking_status', 'completed');
+                    }]);
+                    $query->orderBy('bookings_count', 'desc');
+                })
+                ->whereHas('subscribed_services', function ($query) use($request, $booking) {
+                    $query->where('sub_category_id', $booking->sub_category_id)->where('is_subscribed', 1);
+                })
+                ->when($sort_by !== 'bookings-completed', function ($query) {
+                    return $query->withCount('bookings');
+                })
+                ->withCount('reviews')
+                ->ofApproval(1)->ofStatus(1)->get();
+
+
+
+            return response()->json([
+                'view' => view('bookingmodule::admin.booking.partials.details.provider-info-modal-data', compact('providers', 'booking', 'search', 'sort_by'))->render()
+            ]);
+        }
+        return response()->json(DEFAULT_204, 200);
+    }
+
 }

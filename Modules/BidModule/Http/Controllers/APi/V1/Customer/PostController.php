@@ -22,7 +22,7 @@ class PostController extends Controller
 
 
     public function __construct(
-        private Post $post,
+        private Post                      $post,
         private PostAdditionalInstruction $post_additional_instruction,
     )
     {
@@ -46,7 +46,7 @@ class PostController extends Controller
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
         }
 
-        $bidding_post_validity = (int) (business_config('bidding_post_validity', 'bidding_system'))->live_values;
+        $bidding_post_validity = (int)(business_config('bidding_post_validity', 'bidding_system'))->live_values;
         $posts = $this->post
             ->with(['addition_instructions', 'service', 'category', 'sub_category', 'booking'])
             ->withCount(['bids' => function ($query) {
@@ -55,7 +55,7 @@ class PostController extends Controller
             ->where('customer_user_id', $request->user()->id)
             ->whereBetween('created_at', [Carbon::now()->subDays($bidding_post_validity), Carbon::now()])
             ->when(!is_null($request['is_booked']), function ($query) use ($request) {
-                $query->where('is_booked',$request['is_booked']);
+                $query->where('is_booked', $request['is_booked']);
             })
             ->latest()
             ->paginate($request['limit'], ['*'], 'offset', $request['offset'])
@@ -112,16 +112,16 @@ class PostController extends Controller
                     $decoded = json_decode($value, true);
 
                     if (json_last_error() !== JSON_ERROR_NONE) {
-                        $fail($attribute.' must be a valid JSON string.');
+                        $fail($attribute . ' must be a valid JSON string.');
                         return;
                     }
 
-                    if (is_null($decoded['lat']) || $decoded['lat'] == '') $fail($attribute.' must contain "lat" properties.');
-                    if (is_null($decoded['lon']) || $decoded['lon'] == '') $fail($attribute.' must contain "lon" properties.');
-                    if (is_null($decoded['address']) || $decoded['address'] == '') $fail($attribute.' must contain "address" properties.');
-                    if (is_null($decoded['contact_person_name']) || $decoded['contact_person_name'] == '') $fail($attribute.' must contain "contact_person_name" properties.');
-                    if (is_null($decoded['contact_person_number']) || $decoded['contact_person_number'] == '') $fail($attribute.' must contain "contact_person_number" properties.');
-                    if (is_null($decoded['address_label']) || $decoded['address_label'] == '') $fail($attribute.' must contain "address_label" properties.');
+                    if (is_null($decoded['lat']) || $decoded['lat'] == '') $fail($attribute . ' must contain "lat" properties.');
+                    if (is_null($decoded['lon']) || $decoded['lon'] == '') $fail($attribute . ' must contain "lon" properties.');
+                    if (is_null($decoded['address']) || $decoded['address'] == '') $fail($attribute . ' must contain "address" properties.');
+                    if (is_null($decoded['contact_person_name']) || $decoded['contact_person_name'] == '') $fail($attribute . ' must contain "contact_person_name" properties.');
+                    if (is_null($decoded['contact_person_number']) || $decoded['contact_person_number'] == '') $fail($attribute . ' must contain "contact_person_number" properties.');
+                    if (is_null($decoded['address_label']) || $decoded['address_label'] == '') $fail($attribute . ' must contain "address_label" properties.');
                 },
             ] : '',
         ]);
@@ -147,11 +147,14 @@ class PostController extends Controller
         $post->save();
 
         //notification to customer
-        device_notification_for_bidding($request->user()->fcm_token, translate('Successfully requested for new service'), null, null, 'bidding', null, $post->id, null);
+        $title = get_push_notification_message('customized_booking_request', 'customer_notification', $request->user()?->current_language_key);
+        if ($title && $request->user()?->fcm_token) {
+            device_notification_for_bidding($request->user()->fcm_token, $title, null, null, 'bidding', null, $post->id, null);
+        }
 
         if (count($request['additional_instructions']) > 0) {
             $data = [];
-            foreach ($request['additional_instructions'] as $key=>$item) {
+            foreach ($request['additional_instructions'] as $key => $item) {
                 $data[$key]['id'] = Uuid::uuid4();
                 $data[$key]['details'] = $item;
                 $data[$key]['post_id'] = $post->id;
@@ -163,10 +166,21 @@ class PostController extends Controller
 
         //notification to provider
         $provider_ids = SubscribedService::where('sub_category_id', $request['sub_category_id'])->ofSubscription(1)->pluck('provider_id')->toArray();
-        $providers = Provider::with('owner')->whereIn('id', $provider_ids)->where('zone_id', $post->zone_id)->get();
+        if (business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values) {
+            $providers = Provider::with('owner')->whereIn('id', $provider_ids)->where('zone_id', $post->zone_id)->where('is_suspended', 0)->get();
+        } else {
+            $providers = Provider::with('owner')->whereIn('id', $provider_ids)->where('zone_id', $post->zone_id)->get();
+        }
+
+        $booking_notification_status = business_config('booking', 'notification_settings')->live_values;
+
         foreach ($providers as $provider) {
             $fcm_token = $provider->owner->fcm_token ?? null;
-            if(!is_null($fcm_token)) device_notification_for_bidding($fcm_token, translate('New service request has been arrived'), null, null, 'bidding', null, $post->id, null);
+            $title = get_push_notification_message('new_service_request_arrived', 'provider_notification', $provider?->owner?->current_language_key);
+            $data_info = [
+                'user_name' => $request->user()?->first_name . ' ' . $request->user()?->last_name,
+            ];
+            if (!is_null($fcm_token) && $title && isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) device_notification_for_bidding($fcm_token, $title, null, null, 'bidding', null, $post->id, null, $data_info);
         }
 
         return response()->json(response_formatter(DEFAULT_STORE_200, null), 200);

@@ -3520,3 +3520,61 @@ const TELEPHONE_CODES = [
 const NOTIFICATION_TYPE = [
     'wallet' => 'wallet'
 ];
+
+const NOTIFICATION_FOR_USER = [
+    ['key' => 'booking_place', 'value' => 'Booking Place'],
+    ['key' => 'booking_accepted', 'value' => 'Booking Accepted'],
+    ['key' => 'serviceman_assign', 'value' => 'Serviceman Assign'],
+    ['key' => 'booking_ongoing', 'value' => 'Booking Ongoing'],
+    ['key' => 'otp', 'value' => 'Confirmation OTP'],
+    ['key' => 'booking_complete', 'value' => 'Booking Complete'],
+    ['key' => 'booking_cancel', 'value' => 'Booking Cancel'],
+    ['key' => 'booking_schedule_time_change', 'value' => 'Booking schedule time change'],
+    ['key' => 'add_fund_wallet', 'value' => 'Add Fund Wallet'],
+    ['key' => 'add_fund_wallet_bonus', 'value' => 'Add Fund Wallet Bonus'],
+    ['key' => 'customized_booking_request', 'value' => 'Customized Booking Request'],
+    ['key' => 'offline_payment_approved', 'value' => 'Offline Payment Approved'],
+    ['key' => 'booking_edit_service_add', 'value' => 'Booking Edit Service Add'],
+    ['key' => 'booking_edit_service_remove', 'value' => 'Booking Edit Service Remove'],
+    ['key' => 'booking_edit_service_quantity_increase', 'value' => 'Booking Edit Service Quantity Increase'],
+    ['key' => 'booking_edit_service_quantity_decrease', 'value' => 'Booking Edit Service Quantity Decrease'],
+    ['key' => 'referral_earning', 'value' => 'Refferal Earning'],
+    ['key' => 'loyalty_point', 'value' => 'Loyalty Point'],
+    ['key' => 'refund', 'value' => 'Refund'],
+    ['key' => 'customer_notification_for_provider_bid_offer', 'value' => 'customer notification for provider bid offer'],
+];
+
+const NOTIFICATION_FOR_PROVIDER = [
+    ['key' => 'new_service_request_arrived', 'value' => 'New Service Request Arrived'],
+    ['key' => 'booking_accepted', 'value' => 'Booking Accepted'],
+    ['key' => 'serviceman_assign', 'value' => 'Serviceman Assign'],
+    ['key' => 'ongoing_booking', 'value' => 'Ongoing Booking'],
+    ['key' => 'booking_complete', 'value' => 'Booking Complete'],
+    ['key' => 'booking_cancel', 'value' => 'Booking Cancel'],
+    ['key' => 'booking_schedule_time_change', 'value' => 'Booking schedule time change'],
+    ['key' => 'provider_bid_request_denied', 'value' => 'Provider Bid Request Denied'],
+    ['key' => 'booking_edit_service_add', 'value' => 'Booking Edit Service Add'],
+    ['key' => 'booking_edit_service_remove', 'value' => 'Booking Edit Service Remove'],
+    ['key' => 'booking_edit_service_quantity_increase', 'value' => 'Booking Edit Service Quantity Increase'],
+    ['key' => 'booking_edit_service_quantity_decrease', 'value' => 'Booking Edit Service Quantity Decrease'],
+    ['key' => 'widthdraw_request_approve', 'value' => 'Withdraw Request Approve'],
+    ['key' => 'widthdraw_request_deny', 'value' => 'Withdraw Request Deny'],
+    ['key' => 'admin_payable', 'value' => 'Admin Payable'],
+    ['key' => 'service_request_approve', 'value' => 'Service Request Review'],
+    ['key' => 'service_request_deny', 'value' => 'Service Request Reject'],
+    ['key' => 'provider_suspend', 'value' => 'Provider Suspend'],
+    ['key' => 'provider_suspension_remove', 'value' => 'Provider Suspension removed'],
+];
+
+const NOTIFICATION_FOR_SERVICEMAN = [
+    ['key' => 'serviceman_assign', 'value' => 'Serviceman Assign'],
+    ['key' => 'ongoing_booking', 'value' => 'Ongoing Booking'],
+    ['key' => 'booking_complete', 'value' => 'Booking Complete'],
+    ['key' => 'booking_cancel', 'value' => 'Booking Cancel'],
+    ['key' => 'booking_schedule_time_change', 'value' => 'Booking Schedule Time Change'],
+    ['key' => 'booking_edit_service_add', 'value' => 'Booking Edit Service Add'],
+    ['key' => 'booking_edit_service_quantity_increase', 'value' => 'Booking Edit Service Quantity Increase'],
+    ['key' => 'booking_edit_service_quantity_decrease', 'value' => 'Booking Edit Service Quantity Decrease'],
+    ['key' => 'privacy_and_policy_update', 'value' => 'Privacy And Policy Update'],
+];
+

@@ -4,6 +4,7 @@ namespace App\Http;
 
 use App\Http\Middleware\ApiHitLimit;
 use App\Http\Middleware\ApiHitLimitMiddleware;
+use App\Http\Middleware\LocalizationMiddleware;
 use App\Http\Middleware\ZoneAdder;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Modules\AdminModule\Http\Middleware\AdminMiddleware;
@@ -46,12 +47,16 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\Localization::class
         ],
 
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+
+            //custom localization
+            LocalizationMiddleware::class
         ],
     ];
 
@@ -78,5 +83,6 @@ class Kernel extends HttpKernel
         'admin' => AdminMiddleware::class,
         'provider' => ProviderMiddleware::class,
         'ensureBiddingIsActive' => EnsureBiddingIsActive::class,
+        'localization' => \App\Http\Middleware\LocalizationMiddleware::class,
     ];
 }

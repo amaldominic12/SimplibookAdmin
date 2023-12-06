@@ -24,30 +24,80 @@
                             <form action="{{route('admin.service.store')}}" method="post" enctype="multipart/form-data"
                                   id="service-add-form">
                                 @csrf
+                                @php($language= Modules\BusinessSettingsModule\Entities\BusinessSettings::where('key_name','system_language')->first())
+                                @php($default_lang = str_replace('_', '-', app()->getLocale()))
+                                @if($language)
+                                    <ul class="nav nav--tabs border-color-primary mb-4">
+                                        <li class="nav-item">
+                                            <a class="nav-link lang_link active"
+                                               href="#"
+                                               id="default-link">{{translate('default')}}</a>
+                                        </li>
+                                        @foreach ($language?->live_values as $lang)
+                                            <li class="nav-item">
+                                                <a class="nav-link lang_link"
+                                                   href="#"
+                                                   id="{{ $lang['code'] }}-link">{{ get_language_name($lang['code']) }}</a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
                                 <div id="form-wizard">
                                     <h3>{{translate('service_information')}}</h3>
                                     <section>
                                         <div class="row">
                                             <div class="col-lg-5 mb-5 mb-lg-0">
-                                                <div class="mb-30">
-                                                    <div class="form-floating">
-                                                        <input type="text" class="form-control" name="name"
-                                                               placeholder="{{translate('service_name')}} *"
-                                                               required="" value="{{old('name')}}">
-                                                        <label>{{translate('service_name')}} *</label>
+                                                @if($language)
+                                                    <div class="form-floating mb-30 lang-form" id="default-form">
+                                                        <input type="text" name="name[]"
+                                                               class="form-control default-name"
+                                                               placeholder="{{translate('service_name')}}">
+                                                        <label>{{translate('service_name')}} ({{ translate('default') }}
+                                                            )</label>
                                                     </div>
-                                                </div>
+                                                    <input type="hidden" name="lang[]" value="default">
+                                                    @foreach ($language?->live_values as $lang)
+                                                        <div class="form-floating mb-30 d-none lang-form"
+                                                             id="{{$lang['code']}}-form">
+                                                            <input type="text" name="name[]"
+                                                                   class="form-control input-language"
+                                                                   placeholder="{{translate('service_name')}}"
+                                                                    {{$lang['status'] == '1' ? 'required':''}}
+                                                            >
+                                                            <label>{{translate('service_name')}}
+                                                                ({{strtoupper($lang['code'])}})</label>
+                                                        </div>
+                                                        <input type="hidden" name="lang[]" value="{{$lang['code']}}">
+                                                    @endforeach
+                                                @else
+                                                    <div class="lang-form">
+                                                        <div class="mb-30">
+                                                            <div class="form-floating">
+                                                                <input type="text" class="form-control" name="name[]"
+                                                                       placeholder="{{translate('service_name')}} *"
+                                                                       required="">
+                                                                <label>{{translate('service_name')}} *</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <input type="hidden" name="lang[]" value="default">
+                                                @endif
                                                 <div class="mb-30">
-                                                    <select class="js-select theme-input-style w-100" name="category_id" id="category-id"
+                                                    <select class="js-select theme-input-style w-100" name="category_id"
+                                                            id="category-id"
                                                             onchange="ajax_switch_category('{{url('/')}}/admin/category/ajax-childes/'+this.value)">
-                                                        <option value="0" selected disabled>{{translate('choose_Category')}} *</option>
+                                                        <option value="0" selected
+                                                                disabled>{{translate('choose_Category')}} *
+                                                        </option>
                                                         @foreach($categories as $category)
-                                                            <option value="{{$category->id}}">{{$category->name}}</option>
+                                                            <option
+                                                                    value="{{$category->id}}">{{$category->name}}</option>
                                                         @endforeach
                                                     </select>
                                                 </div>
                                                 <div class="mb-30" id="sub-category-selector">
-                                                    <select class="subcategory-select theme-input-style w-100" name="sub_category_id" id="sub-category-id">
+                                                    <select class="subcategory-select theme-input-style w-100"
+                                                            name="sub_category_id" id="sub-category-id">
                                                     </select>
                                                 </div>
 
@@ -63,7 +113,8 @@
 
                                                 <div class="mb-30">
                                                     <div class="form-floating">
-                                                        <input type="number" class="form-control" name="min_bidding_price" min="0" step="any"
+                                                        <input type="number" class="form-control"
+                                                               name="min_bidding_price" min="0" step="any"
                                                                placeholder="{{translate('Minimum bidding price')}} *"
                                                                required="" value="{{old('min_bidding_price')}}">
                                                         <label>{{translate('Minimum bidding price')}} *</label>
@@ -72,7 +123,9 @@
 
                                                 <div class="mb-30">
                                                     <div class="form-floating">
-                                                        <input type="text" class="form-control w-100" name="tags" placeholder="{{translate('Enter_tags')}}" data-role="tagsinput">
+                                                        <input type="text" class="form-control w-100" name="tags"
+                                                               placeholder="{{translate('Enter_tags')}}"
+                                                               data-role="tagsinput">
                                                     </div>
                                                 </div>
                                             </div>
@@ -85,8 +138,8 @@
                                                                    name="thumbnail">
                                                             <div class="upload-file__img">
                                                                 <img
-                                                                    src="{{asset('public/assets/admin-module')}}/img/media/upload-file.png"
-                                                                    alt="">
+                                                                        src="{{asset('public/assets/admin-module')}}/img/media/upload-file.png"
+                                                                        alt="">
                                                             </div>
                                                             <span class="upload-file__edit">
                                                                 <span class="material-icons">edit</span>
@@ -109,8 +162,8 @@
                                                                    name="cover_image">
                                                             <div class="upload-file__img upload-file__img_banner">
                                                                 <img
-                                                                    src="{{asset('public/assets/admin-module')}}/img/media/banner-upload-file.png"
-                                                                    alt="">
+                                                                        src="{{asset('public/assets/admin-module')}}/img/media/banner-upload-file.png"
+                                                                        alt="">
                                                             </div>
                                                             <span class="upload-file__edit">
                                                                 <span class="material-icons">edit</span>
@@ -121,22 +174,80 @@
                                                         jpeg, gif Image Size - maximum size 2 MB Image Ratio - 3:1')}}</p>
                                                 </div>
                                             </div>
-                                            <div class="col-lg-12 mt-5">
-                                                <div class="mb-30">
-                                                    <div class="form-floating">
+                                            @if($language)
+                                                <div class="lang-form2" id="default-form2">
+                                                    <div class="col-lg-12 mt-5">
+                                                        <div class="mb-30">
+                                                            <div class="form-floating">
+                                                                <textarea type="text" class="form-control"
+                                                                          name="short_description[]"></textarea>
+                                                                <label>{{translate('short_description')}}
+                                                                    ({{translate('default')}}) *</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 mt-4 mt-md-5">
+                                                        <label for="editor"
+                                                               class="mb-2">{{translate('long_Description')}}
+                                                            ({{translate('default')}})
+                                                            <span class="text-danger">*</span></label>
+                                                        <section id="editor" class="dark-support">
+                                                    <textarea class="ckeditor"
+                                                              name="description[]"></textarea>
+                                                        </section>
+                                                    </div>
+                                                    {{--                                                    <input type="hidden" name="lang[]" value="default">--}}
+                                                </div>
+                                                @foreach ($language?->live_values as $lang)
+                                                    <div class="d-none lang-form2" id="{{$lang['code']}}-form2">
+                                                        <div class="col-lg-12 mt-5">
+                                                            <div class="mb-30">
+                                                                <div class="form-floating">
                                                         <textarea type="text" class="form-control"
-                                                                  name="short_description">{{old('short_description')}}</textarea>
-                                                        <label>{{translate('short_description')}} *</label>
+                                                                  name="short_description[]"
+                                                                  {{$lang['status'] == '1' ? 'required':''}}
+                                                                  @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif></textarea>
+                                                                    <label>{{translate('short_description')}}
+                                                                        ({{strtoupper($lang['code'])}}) *</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-12 mt-4 mt-md-5">
+                                                            <label for="editor"
+                                                                   class="mb-2">{{translate('long_Description')}}
+                                                                ({{strtoupper($lang['code'])}})
+                                                                <span class="text-danger">*</span></label>
+                                                            <section id="editor" class="dark-support">
+                                                            <textarea class="ckeditor"
+                                                                      name="description[]"
+                                                                      {{$lang['status'] == '1' ? 'required':''}}
+                                                                      @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif></textarea>
+                                                            </section>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            @else
+                                                <div class="normal-form">
+                                                    <div class="col-lg-12 mt-5">
+                                                        <div class="mb-30">
+                                                            <div class="form-floating">
+                                                        <textarea type="text" class="form-control"
+                                                                  name="short_description[]"></textarea>
+                                                                <label>{{translate('short_description')}} *</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 mt-4 mt-md-5">
+                                                        <label for="editor"
+                                                               class="mb-2">{{translate('long_Description')}}
+                                                            <span class="text-danger">*</span></label>
+                                                        <section id="editor" class="dark-support">
+                                                    <textarea class="ckeditor"
+                                                              name="description[]"></textarea>
+                                                        </section>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="col-12 mt-4 mt-md-5">
-                                                <label for="editor" class="mb-2">{{translate('long_Description')}} <span class="text-danger">*</span></label>
-                                                <section id="editor" class="dark-support">
-                                                    <textarea class="ckeditor"
-                                                              name="description">{{old('description')}}</textarea>
-                                                </section>
-                                            </div>
+                                            @endif
                                         </div>
                                     </section>
 
@@ -165,10 +276,10 @@
                                         <div class="table-responsive p-01">
                                             <table class="table align-middle table-variation">
                                                 <thead id="category-wise-zone" class="text-nowrap">
-                                                    @include('servicemanagement::admin.partials._category-wise-zone',['zones'=>session()->has('category_wise_zones')?session('category_wise_zones'):[]])
+                                                @include('servicemanagement::admin.partials._category-wise-zone',['zones'=>session()->has('category_wise_zones')?session('category_wise_zones'):[]])
                                                 </thead>
                                                 <tbody id="variation-table">
-                                                    @include('servicemanagement::admin.partials._variant-data',['zones'=>session()->has('category_wise_zones')?session('category_wise_zones'):[]])
+                                                @include('servicemanagement::admin.partials._variant-data',['zones'=>session()->has('category_wise_zones')?session('category_wise_zones'):[]])
                                                 </tbody>
                                             </table>
                                         </div>
@@ -206,11 +317,11 @@
             onFinished: function (event, currentIndex) {
                 //validation
                 let category = $("#category-id").val();
-                if(category === '0') {
+                if (category === '0') {
                     toastr.error("{{translate('Select_valid_category')}} *");
                 }
 
-                if(variationCount > 0) {
+                if (variationCount > 0) {
                     $("#service-add-form")[0].submit();
                 } else {
                     $('#service-add-form').trigger('focus')
@@ -317,6 +428,24 @@
     <script src="https://cdn.ckeditor.com/4.14.0/standard/ckeditor.js"></script>
     {{--<script src="{{asset('public/assets/ckeditor/ckeditor.js')}}"></script>--}}
     <script src="{{asset('public/assets/ckeditor/jquery.js')}}"></script>
+
+    <script>
+
+        $(".lang_link").on('click', function (e) {
+            e.preventDefault();
+            $(".lang_link").removeClass('active');
+            $(".lang-form").addClass('d-none');
+            $(".lang-form2").addClass('d-none');
+            $(this).addClass('active');
+
+            let form_id = this.id;
+            let lang = form_id.substring(0, form_id.length - 5);
+            console.log(lang);
+            $("#" + lang + "-form").removeClass('d-none');
+            $("#" + lang + "-form2").removeClass('d-none');
+
+        });
+    </script>
 
     <script type="text/javascript">
         $(document).ready(function () {

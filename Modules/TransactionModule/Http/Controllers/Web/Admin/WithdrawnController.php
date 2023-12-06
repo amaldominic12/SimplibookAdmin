@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
+use Modules\BusinessSettingsModule\Entities\Translation;
 use Modules\ProviderManagement\Entities\WithdrawRequest;
 use Modules\TransactionModule\Entities\Account;
 use Modules\TransactionModule\Entities\Transaction;
@@ -47,7 +48,7 @@ class WithdrawnController extends Controller
             'body' => 'required',
         ]);
 
-        $withdrawal_methods = $this->withdrawal_method
+        $withdrawal_methods = $this->withdrawal_method->withoutGlobalScope('translate')
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search']);
                 return $query->where(function ($query) use ($keys) {
@@ -80,15 +81,20 @@ class WithdrawnController extends Controller
     {
         $request->validate([
             'method_name' => 'required',
+            'method_name.0' => 'required',
             'field_type' => 'required|array',
             'field_name' => 'required|array',
             'placeholder_text' => 'required|array',
             'is_required' => '',
             'is_default' => 'in:0,1 ',
-        ]);
+        ],
+            [
+                'method_name.0.required' => translate('default_method_name_is_required'),
+            ]
+        );
 
         $method_fields = [];
-        foreach ($request->field_name as $key=>$field_name) {
+        foreach ($request->field_name as $key => $field_name) {
             $method_fields[] = [
                 'input_type' => $request->field_type[$key],
                 'input_name' => strtolower(str_replace(' ', "_", $request->field_name[$key])),
@@ -97,10 +103,10 @@ class WithdrawnController extends Controller
             ];
         }
 
-        $data_count = $this->withdrawal_method->get()->count();
+        $data_count = $this->withdrawal_method->withoutGlobalScope('translate')->get()->count();
 
-        $withdrawal_method_object = $this->withdrawal_method->updateOrCreate(
-            ['method_name' => $request->method_name],
+        $withdrawal_method_object = $this->withdrawal_method->withoutGlobalScope('translate')->updateOrCreate(
+            ['method_name' => $request->method_name[array_search('default', $request->lang)]],
             [
                 'method_fields' => $method_fields,
                 'is_default' => ($request->has('is_default') && $request->is_default || $data_count == 0) == '1' ? 1 : 0,
@@ -108,7 +114,36 @@ class WithdrawnController extends Controller
         );
 
         if ($request->has('is_default') && $request->is_default == '1') {
-            $this->withdrawal_method->where('id', '!=', $withdrawal_method_object->id)->update(['is_default' => 0]);
+            $this->withdrawal_method->withoutGlobalScope('translate')->where('id', '!=', $withdrawal_method_object->id)->update(['is_default' => 0]);
+        }
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request->method_name[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\TransactionModule\Entities\WithdrawalMethod',
+                            'translationable_id' => $withdrawal_method_object->id,
+                            'locale' => $key,
+                            'key' => 'method_name'],
+                        ['value' => $withdrawal_method_object->method_name]
+                    );
+                }
+            } else {
+
+                if ($request->method_name[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\TransactionModule\Entities\WithdrawalMethod',
+                            'translationable_id' => $withdrawal_method_object->id,
+                            'locale' => $key,
+                            'key' => 'method_name'],
+                        ['value' => $request->method_name[$index]]
+                    );
+                }
+            }
         }
 
         Toastr::success(DEFAULT_STORE_200['message']);
@@ -122,7 +157,7 @@ class WithdrawnController extends Controller
      */
     public function method_edit($id): Renderable
     {
-        $withdrawal_method = $this->withdrawal_method->find($id);
+        $withdrawal_method = $this->withdrawal_method->withoutGlobalScope('translate')->find($id);
         return View('transactionmodule::admin.withdraw.method.edit', compact('withdrawal_method'));
     }
 
@@ -131,36 +166,41 @@ class WithdrawnController extends Controller
      * @param Request $request
      * @return RedirectResponse
      */
-    public function method_update(Request $request)
+    public function method_update(Request $request): RedirectResponse
     {
         $request->validate([
             'method_name' => 'required',
+            'method_name.0' => 'required',
             'field_type' => 'required|array',
             'field_name' => 'required|array',
             'placeholder_text' => 'required|array',
             'is_required' => '',
             'is_default' => 'in:0,1 ',
-        ]);
-        // dd($request->all());
-        $withdrawal_method = $this->withdrawal_method->find($request['id']);
+        ],
+            [
+                'method_name.0.required' => translate('default_method_name_is_required'),
+            ]
+        );
 
-        if(!isset($withdrawal_method)) {
+        $withdrawal_method = $this->withdrawal_method->withoutGlobalScope('translate')->find($request['id']);
+
+        if (!isset($withdrawal_method)) {
             Toastr::error(DEFAULT_404['message']);
             return back();
         }
 
         $method_fields = [];
-        foreach ($request->field_name as $key=>$field_name) {
+        foreach ($request->field_name as $key => $field_name) {
             $method_fields[] = [
                 'input_type' => $request->field_type[$key],
                 'input_name' => strtolower(str_replace(' ', "_", $request->field_name[$key])),
                 'placeholder' => $request->placeholder_text[$key],
-                'is_required' => isset($request['is_required']) && isset($request['is_required'][$key]) ? $request['is_required'][$key] : 0,
+                'is_required' => isset($request['is_required']) && isset($request['is_required'][$key]) ? 1 : 0,
             ];
         }
 
-        $withdrawal_method_object = $this->withdrawal_method->updateOrCreate(
-            ['method_name' => $request->method_name],
+        $withdrawal_method_object = $this->withdrawal_method->withoutGlobalScope('translate')->updateOrCreate(
+            ['method_name' => $request->method_name[array_search('default', $request->lang)]],
             [
                 'method_fields' => $method_fields,
                 'is_default' => $request->has('is_default') && $request->is_default == '1' ? 1 : 0,
@@ -170,6 +210,36 @@ class WithdrawnController extends Controller
         if ($request->has('is_default') && $request->is_default == '1') {
             $this->withdrawal_method->where('id', '!=', $withdrawal_method_object->id)->update(['is_default' => 0]);
         }
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request->method_name[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\TransactionModule\Entities\WithdrawalMethod',
+                            'translationable_id' => $withdrawal_method_object->id,
+                            'locale' => $key,
+                            'key' => 'method_name'],
+                        ['value' => $withdrawal_method_object->method_name]
+                    );
+                }
+            } else {
+
+                if ($request->method_name[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\TransactionModule\Entities\WithdrawalMethod',
+                            'translationable_id' => $withdrawal_method_object->id,
+                            'locale' => $key,
+                            'key' => 'method_name'],
+                        ['value' => $request->method_name[$index]]
+                    );
+                }
+            }
+        }
+
 
         Toastr::success(DEFAULT_UPDATE_200['message']);
         return back();
@@ -182,7 +252,9 @@ class WithdrawnController extends Controller
      */
     public function method_destroy($id): RedirectResponse
     {
-        $this->withdrawal_method->where('id', $id)->delete();
+        $method_data = $this->withdrawal_method->withoutGlobalScope('translate')->where('id', $id)->first();
+        $method_data->translations()->delete();
+        $this->withdrawal_method->where('id', $id)->withoutGlobalScope('translate')->delete();
         Toastr::success(DEFAULT_DELETE_200['message']);
         return back();
     }
@@ -195,10 +267,10 @@ class WithdrawnController extends Controller
      */
     public function method_status_update(Request $request, $id): JsonResponse
     {
-        $withdrawal_method = $this->withdrawal_method->where('id', $id)->first();
+        $withdrawal_method = $this->withdrawal_method->withoutGlobalScope('translate')->where('id', $id)->first();
 
         if (!$withdrawal_method->is_default) {
-            $this->withdrawal_method->where('id', $id)->update(['is_active' => !$withdrawal_method->is_active]);
+            $this->withdrawal_method->withoutGlobalScope('translate')->where('id', $id)->update(['is_active' => !$withdrawal_method->is_active]);
             return response()->json(DEFAULT_STATUS_UPDATE_200, 200);
         }
         return response()->json(DEFAULT_400, 200);
@@ -212,13 +284,13 @@ class WithdrawnController extends Controller
      */
     public function method_default_status_update(Request $request, $id): JsonResponse
     {
-        $withdrawal_method = $this->withdrawal_method->where('id', $id)->first();
+        $withdrawal_method = $this->withdrawal_method->withoutGlobalScope('translate')->where('id', $id)->first();
         if ($withdrawal_method->is_default == 1) {
             return response()->json(DEFAULT_STATUS_FAILED_200, 200);
         }
 
-        $this->withdrawal_method->where('id', '!=', $id)->update(['is_default' => $withdrawal_method->is_default]);
-        $this->withdrawal_method->where('id', $id)->update(['is_default' => !$withdrawal_method->is_default]);
+        $this->withdrawal_method->withoutGlobalScope('translate')->where('id', '!=', $id)->update(['is_default' => $withdrawal_method->is_default]);
+        $this->withdrawal_method->withoutGlobalScope('translate')->where('id', $id)->update(['is_default' => !$withdrawal_method->is_default]);
 
         return response()->json(DEFAULT_STATUS_UPDATE_200, 200);
     }

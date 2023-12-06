@@ -35,6 +35,7 @@ class ConfigController extends Controller
             'countries' => COUNTRIES,
             'system_modules' => SYSTEM_MODULES,
             'time_zones' => DateTimeZone::listIdentifiers(),
+            'time_format' => (business_config('time_format', 'business_information'))->live_values ?? '24h',
             'recaptcha' => (business_config('recaptcha', 'third_party'))->live_values ?? null,
             'pagination_limit' => (business_config('pagination_limit', 'business_information'))->live_values ?? null,
             'footer_text' => (business_config('footer_text', 'business_information'))->live_values ?? null,

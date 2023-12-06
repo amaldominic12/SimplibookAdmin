@@ -25,11 +25,11 @@ try {
 } catch (\Exception $exception) {}
 
 
-Route::get('payment', [PaymentController::class, 'index']);
+Route::match(['get', 'post'],'payment', [PaymentController::class, 'index']);
 
 if (!$is_published) {
     Route::group(['prefix' => 'payment'], function () {
-        Route::get('/', [PaymentController::class, 'index']);
+        Route::match(['get', 'post'],'/', [PaymentController::class, 'index']);
 
         //SSLCOMMERZ
         Route::group(['prefix' => 'sslcommerz', 'as' => 'sslcommerz.'], function () {

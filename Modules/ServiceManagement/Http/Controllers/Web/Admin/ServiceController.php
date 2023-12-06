@@ -13,6 +13,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\BookingModule\Entities\Booking;
+use Modules\BusinessSettingsModule\Entities\Translation;
 use Modules\CategoryManagement\Entities\Category;
 use Modules\ReviewModule\Entities\Review;
 use Modules\ServiceManagement\Entities\Faq;
@@ -105,22 +106,31 @@ class ServiceController extends Controller
 
         $request->validate([
             'name' => 'required|max:191',
+            'name.*' => 'required',
             'category_id' => 'required|uuid',
             'sub_category_id' => 'required|uuid',
             'cover_image' => 'required|image|mimes:jpeg,jpg,png,gif|max:10000',
             'description' => 'required',
+            'description.*' => 'required',
             'short_description' => 'required',
+            'short_description.*' => 'required',
             'thumbnail' => 'required',
             'tax' => 'required|numeric|min:0|max:100',
             'min_bidding_price' => 'required|numeric|min:0|not_in:0',
-        ]);
+        ],
+            [
+                'name.*.required' => 'All names are required.',
+                'description.*.required' => 'All descriptions are required.',
+                'short_description.*.required' => 'All short descriptions are required.',
+            ]
+        );
 
 
         $tag_ids = [];
         if ($request->tags != null) {
             $tags = explode(",", $request->tags);
         }
-        if(isset($tags)){
+        if (isset($tags)) {
             foreach ($tags as $key => $value) {
                 $tag = Tag::firstOrNew(['tag' => $value]);
                 $tag->save();
@@ -129,11 +139,11 @@ class ServiceController extends Controller
         }
 
         $service = $this->service;
-        $service->name = $request->name;
+        $service->name = $request->name[array_search('default', $request->lang)];
         $service->category_id = $request->category_id;
         $service->sub_category_id = $request->sub_category_id;
-        $service->short_description = $request->short_description;
-        $service->description = $request->description;
+        $service->short_description = $request->short_description[array_search('default', $request->lang)];
+        $service->description = $request->description[array_search('default', $request->lang)];
         $service->cover_image = file_uploader('service/', 'png', $request->file('cover_image'));
         $service->thumbnail = file_uploader('service/', 'png', $request->file('thumbnail'));
         $service->tax = $request->tax;
@@ -165,6 +175,85 @@ class ServiceController extends Controller
         }
 
         $service->variations()->createMany($variation_format);
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request->name[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'name'],
+                        ['value' => $service->name]
+                    );
+                }
+            } else {
+
+                if ($request->name[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'name'],
+                        ['value' => $request->name[$index]]
+                    );
+                }
+            }
+
+            if ($default_lang == $key && !($request->short_description[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'short_description'],
+                        ['value' => $service->short_description]
+                    );
+                }
+            } else {
+
+                if ($request->short_description[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'short_description'],
+                        ['value' => $request->short_description[$index]]
+                    );
+                }
+            }
+
+            if ($default_lang == $key && !($request->description[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'description'],
+                        ['value' => $service->description]
+                    );
+                }
+            } else {
+
+                if ($request->description[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'description'],
+                        ['value' => $request->description[$index]]
+                    );
+                }
+            }
+        }
 
         Toastr::success(SERVICE_STORE_200['message']);
 
@@ -228,7 +317,7 @@ class ServiceController extends Controller
      */
     public function edit(string $id): View|Factory|RedirectResponse|Application
     {
-        $service = $this->service->where('id', $id)->with(['category.children', 'category.zones', 'variations'])->first();
+        $service = $this->service->withoutGlobalScope('translate')->where('id', $id)->with(['category.children', 'category.zones', 'variations'])->first();
         if (isset($service)) {
             $editing_variants = $service->variations->pluck('variant_key')->unique()->toArray();
             session()->put('editing_variants', $editing_variants);
@@ -239,7 +328,7 @@ class ServiceController extends Controller
             session()->put('category_wise_zones', $zones);
 
             $tag_names = [];
-            if($service->tags) {
+            if ($service->tags) {
                 foreach ($service->tags as $tag) {
                     $tag_names[] = $tag['tag'];
                 }
@@ -262,9 +351,13 @@ class ServiceController extends Controller
     {
         $request->validate([
             'name' => 'required',
+            'name.*' => 'required',
             'category_id' => 'required|uuid',
             'sub_category_id' => 'required|uuid',
             'description' => 'required',
+            'description.*' => 'required',
+            'short_description' => 'required',
+            'short_description.*' => 'required',
             'tax' => 'required|numeric|min:0',
             'variants' => 'required|array',
             'min_bidding_price' => 'required|numeric|min:0|not_in:0',
@@ -274,11 +367,11 @@ class ServiceController extends Controller
         if (!isset($service)) {
             return response()->json(response_formatter(DEFAULT_204), 200);
         }
-        $service->name = $request->name;
+        $service->name = $request->name[array_search('default', $request->lang)];
         $service->category_id = $request->category_id;
         $service->sub_category_id = $request->sub_category_id;
-        $service->short_description = $request->short_description;
-        $service->description = $request->description;
+        $service->short_description = $request->short_description[array_search('default', $request->lang)];;
+        $service->description = $request->description[array_search('default', $request->lang)];
 
         if ($request->has('cover_image')) {
             $service->cover_image = file_uploader('service/', 'png', $request->file('cover_image'));
@@ -309,7 +402,7 @@ class ServiceController extends Controller
                     'variant' => str_replace('_', ' ', $item),
                     'variant_key' => $item,
                     'zone_id' => $zone->id,
-                    'price' => $data[ $item. '_' . $zone->id . '_price'] ?? 0,
+                    'price' => $data[$item . '_' . $zone->id . '_price'] ?? 0,
                     'service_id' => $service->id
                 ];
             }
@@ -318,6 +411,86 @@ class ServiceController extends Controller
         $service->variations()->createMany($variation_format);
         session()->forget('variations');
         session()->forget('editing_variants');
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request->name[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'name'],
+                        ['value' => $service->name]
+                    );
+                }
+            } else {
+
+                if ($request->name[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'name'],
+                        ['value' => $request->name[$index]]
+                    );
+                }
+            }
+
+            if ($default_lang == $key && !($request->short_description[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'short_description'],
+                        ['value' => $service->short_description]
+                    );
+                }
+            } else {
+
+                if ($request->short_description[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'short_description'],
+                        ['value' => $request->short_description[$index]]
+                    );
+                }
+            }
+
+            if ($default_lang == $key && !($request->description[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'description'],
+                        ['value' => $service->description]
+                    );
+                }
+            } else {
+
+                if ($request->description[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\ServiceManagement\Entities\Service',
+                            'translationable_id' => $service->id,
+                            'locale' => $key,
+                            'key' => 'description'],
+                        ['value' => $request->description[$index]]
+                    );
+                }
+            }
+        }
+
 
         Toastr::success(DEFAULT_UPDATE_200['message']);
         return back();
@@ -336,6 +509,7 @@ class ServiceController extends Controller
             foreach (['thumbnail', 'cover_image'] as $item) {
                 file_remover('service/', $service[$item]);
             }
+            $service->translations()->delete();
             $service->variations()->delete();
             $service->delete();
 

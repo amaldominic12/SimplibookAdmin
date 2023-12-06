@@ -1,6 +1,6 @@
 @extends('adminmodule::layouts.master')
 
-@section('title',translate('push_notification'))
+@section('title',translate('Send Notification'))
 
 @push('css_or_js')
     <link rel="stylesheet" href="{{asset('public/assets/admin-module')}}/plugins/select2/select2.min.css"/>
@@ -175,14 +175,14 @@
                                     <div class="table-responsive">
                                         <table id="example" class="table align-middle">
                                             <thead class="text-nowrap">
-                                                <tr>
-                                                    <th>{{translate('title')}}</th>
-                                                    <th>{{translate('cover_image')}}</th>
-                                                    <th>{{translate('send_to')}}</th>
-                                                    <th>{{translate('zones')}}</th>
-                                                    <th>{{translate('status')}}</th>
-                                                    <th>{{translate('action')}}</th>
-                                                </tr>
+                                            <tr>
+                                                <th>{{translate('title')}}</th>
+                                                <th>{{translate('cover_image')}}</th>
+                                                <th>{{translate('send_to')}}</th>
+                                                <th>{{translate('zones')}}</th>
+                                                <th>{{translate('status')}}</th>
+                                                <th>{{translate('action')}}</th>
+                                            </tr>
                                             </thead>
                                             <tbody>
                                             @foreach($pushNotification as $item)
@@ -272,3 +272,4 @@
     <script src="{{asset('public/assets/admin-module')}}/plugins/dataTables/jquery.dataTables.min.js"></script>
     <script src="{{asset('public/assets/admin-module')}}/plugins/dataTables/dataTables.select.min.js"></script>
 @endpush
+

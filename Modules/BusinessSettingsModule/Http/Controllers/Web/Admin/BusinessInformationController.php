@@ -5,6 +5,7 @@ namespace Modules\BusinessSettingsModule\Http\Controllers\Web\Admin;
 use App\Traits\ActivationClass;
 use App\Traits\FileManagerTrait;
 use Brian2694\Toastr\Facades\Toastr;
+use Dflydev\DotAccessData\Data;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -19,8 +20,10 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Madnest\Madzipper\Facades\Madzipper;
-use Mockery\Exception;
 use Modules\BusinessSettingsModule\Entities\BusinessSettings;
+use Modules\BusinessSettingsModule\Entities\DataSetting;
+use Modules\BusinessSettingsModule\Entities\Translation;
+use Modules\ProviderManagement\Entities\Provider;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Support\Facades\File;
 use ZipArchive;
@@ -31,10 +34,12 @@ class BusinessInformationController extends Controller
     use FileManagerTrait;
 
     private BusinessSettings $business_setting;
+    private DataSetting $data_setting;
 
-    public function __construct(BusinessSettings $business_setting)
+    public function __construct(BusinessSettings $business_setting, DataSetting $data_setting)
     {
         $this->business_setting = $business_setting;
+        $this->data_setting = $data_setting;
 
         if (request()->isMethod('get')) {
             $response = $this->actch();
@@ -342,9 +347,15 @@ class BusinessInformationController extends Controller
      */
     public function customer_setup(Request $request): JsonResponse|RedirectResponse
     {
-        collect(['customer_wallet'])->each(fn($item, $key) => $request[$item] = $request->has($item) ? (int)$request[$item] : 0);
+        collect(['customer_wallet', 'customer_loyalty_point', 'customer_referral_earning'])->each(fn($item, $key) => $request[$item] = $request->has($item) ? (int)$request[$item] : 0);
         $validator = Validator::make($request->all(), [
             'customer_wallet' => 'required|in:0,1',
+            'customer_loyalty_point' => 'required|in:0,1',
+            'customer_referral_earning' => 'required|in:0,1',
+            'loyalty_point_value_per_currency_unit' => 'required',
+            'loyalty_point_percentage_per_booking' => 'required',
+            'min_loyalty_point_to_transfer' => 'required',
+            'referral_value_per_currency_unit' => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -373,18 +384,20 @@ class BusinessInformationController extends Controller
      */
     public function provider_setup(Request $request): JsonResponse|RedirectResponse
     {
-        collect(['provider_can_cancel_booking', 'provider_can_edit_booking', 'provider_self_registration'])->each(fn($item, $key) => $request[$item] = $request->has($item) ? (int)$request[$item] : 0);
-        $validator = Validator::make($request->all(), [
+        collect(['provider_can_cancel_booking', 'provider_can_edit_booking', 'provider_self_registration', 'suspend_on_exceed_cash_limit_provider', 'provider_self_delete'])->each(fn($item, $key) => $request[$item] = $request->has($item) ? (int)$request[$item] : 0);
+
+        $validated = $request->validate([
             'provider_can_cancel_booking' => 'required|in:0,1',
             'provider_can_edit_booking' => 'required|in:0,1',
             'provider_self_registration' => 'required|in:0,1',
+            'provider_self_delete' => 'required|in:0,1',
+            'max_cash_in_hand_limit_provider' => 'required',
+            'suspend_on_exceed_cash_limit_provider' => 'required|in:0,1',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
-        }
+        $old_max_limit_amount = $this->business_setting->where('key_name', 'max_cash_in_hand_limit_provider')->where('settings_type', 'provider_config')->first()->live_values;
 
-        foreach ($validator->validated() as $key => $value) {
+        foreach ($validated as $key => $value) {
             $this->business_setting->updateOrCreate(['key_name' => $key], [
                 'key_name' => $key,
                 'live_values' => $value,
@@ -393,6 +406,31 @@ class BusinessInformationController extends Controller
                 'mode' => 'live',
                 'is_active' => 1,
             ]);
+        }
+
+        $current_max_limit_amount = $this->business_setting->where('key_name', 'max_cash_in_hand_limit_provider')->where('settings_type', 'provider_config')->first()->live_values;
+        $providers = Provider::ofApproval(1)->ofStatus(1)->get();
+
+        if($old_max_limit_amount != $current_max_limit_amount){
+            foreach ($providers as $provider){
+                if ($provider){
+                    $payable = $provider?->owner?->account?->account_payable;
+                    $receivable = $provider?->owner?->account?->account_receivable;
+                    if ($payable > $receivable) {
+                        $cash_in_hand = $payable - $receivable;
+                        if ($cash_in_hand >= $current_max_limit_amount){
+                            $provider->is_suspended = 1;
+                            $provider->save();
+                        }else{
+                            $provider->is_suspended = 0;
+                            $provider->save();
+                        }
+                    }elseif($payable <= $receivable){
+                        $provider->is_suspended = 0;
+                        $provider->save();
+                    }
+                }
+            }
         }
 
         Toastr::success(DEFAULT_UPDATE_200['message']);
@@ -545,7 +583,7 @@ class BusinessInformationController extends Controller
     public function pages_setup_get(Request $request): View|Factory|Application
     {
         $web_page = $request->has('web_page') ? $request['web_page'] : 'about_us';
-        $data_values = $this->business_setting->where('settings_type', 'pages_setup')->orderBy('key_name')->get();
+        $data_values = $this->data_setting->where('type', 'pages_setup')->withoutGlobalScope('translate')->with('translations')->orderBy('key')->get();
         return view('businesssettingsmodule::admin.page-settings', compact('data_values', 'web_page'));
     }
 
@@ -558,17 +596,45 @@ class BusinessInformationController extends Controller
     {
         $request->validate([
             'page_name' => 'required|in:about_us,privacy_policy,terms_and_conditions,refund_policy,cancellation_policy',
-            'page_content' => ''
+            'page_content.*' => 'required',
+        ], [
+            'page_content.*.required' => 'All page contents are required.',
         ]);
 
-        $this->business_setting->updateOrCreate(['key_name' => $request['page_name'], 'settings_type' => 'pages_setup'], [
-            'key_name' => $request['page_name'],
-            'live_values' => $request['page_content'],
-            'test_values' => null,
-            'settings_type' => 'pages_setup',
-            'mode' => 'live',
+        $business_data = $this->data_setting->updateOrCreate(['key' => $request['page_name'], 'type' => 'pages_setup'], [
+            'key' => $request['page_name'],
+            'value' => $request->page_content[array_search('default', $request->lang)],
+            'type' => 'pages_setup',
             'is_active' => $request['is_active'] ?? 0,
         ]);
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request->page_content[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\BusinessSettingsModule\Entities\DataSetting',
+                            'translationable_id' => $business_data->id,
+                            'locale' => $key,
+                            'key' => $business_data->key],
+                        ['value' => $business_data->page_content]
+                    );
+                }
+            } else {
+                if ($request->page_content[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\BusinessSettingsModule\Entities\DataSetting',
+                            'translationable_id' => $business_data->id,
+                            'locale' => $key,
+                            'key' => $business_data->key],
+                        ['value' => $request->page_content[$index]]
+                    );
+                }
+            }
+        }
 
         if (in_array($request['page_name'], ['privacy_policy', 'terms_and_conditions'])) {
             $message = translate('page_information_has_been_updated') . '!';

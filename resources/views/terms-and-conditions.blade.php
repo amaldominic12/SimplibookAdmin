@@ -11,7 +11,7 @@
     <!-- Page Header End -->
     <section class="privacy-section py-5">
         <div class="container">
-            {!! bs_data($settings,'terms_and_conditions', 1) !!}
+            {!! bs_data_text($data_settings,'terms_and_conditions', 1) !!}
         </div>
     </section>
 @endsection

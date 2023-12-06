@@ -98,8 +98,8 @@ class EmployeeController extends Controller
         $request->validate([
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|unique:users,phone',
+            'email' => 'required|email',
+            'phone' => 'required',
             'password' => 'required',
             'profile_image' => 'required|image|mimes:jpeg,jpg,png,gif|max:10000',
             'identity_type' => 'required|in:passport,driving_license,nid,trade_license,company_id',
@@ -115,6 +115,15 @@ class EmployeeController extends Controller
         $identity_images = [];
         foreach ($request->identity_images as $image) {
             $identity_images[] = file_uploader('employee/identity/', 'png', $image);
+        }
+
+        if (User::where('email', $request['email'])->first()) {
+            Toastr::error(translate('Email already taken'));
+            return back();
+        }
+        if (User::where('phone', $request['phone'])->first()) {
+            Toastr::error(translate('Phone already taken'));
+            return back();
         }
 
         DB::transaction(function () use ($request, $identity_images) {
@@ -172,8 +181,8 @@ class EmployeeController extends Controller
         $request->validate([
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email|unique:users,email,' . $employee->id,
-            'phone' => 'required|unique:users,phone,' . $employee->id,
+            'email' => 'required|email',
+            'phone' => 'required',
             'password' => !is_null($request->password) ? 'string|min:8' : '',
             'confirm_password' => !is_null($request->password) ? 'required|same:password' : '',
             'profile_image' => 'image|mimes:jpeg,jpg,png,gif|max:10000',
@@ -186,6 +195,15 @@ class EmployeeController extends Controller
             'zone_ids.*' => 'uuid',
             'address' => 'required|string'
         ]);
+
+        if (User::where('email', $request['email'])->where('id', '!=', $employee->id)->exists()) {
+            Toastr::error(translate('Email already taken'));
+            return back();
+        }
+        if (User::where('phone', $request['phone'])->where('id', '!=', $employee->id)->exists()) {
+            Toastr::error(translate('Phone already taken'));
+            return back();
+        }
 
         /*$identity_images = (array)$employee->identification_image;*/
         $identity_images = [];

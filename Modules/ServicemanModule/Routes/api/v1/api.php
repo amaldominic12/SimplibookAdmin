@@ -45,5 +45,7 @@ Route::group(['prefix' => 'serviceman', 'as' => 'serviceman.', 'namespace' => 'A
             Route::put('change-password', 'ServicemanController@change_password');
         });
     });
+
+    Route::post('change-language', 'ServicemanController@change_language');
 });
 

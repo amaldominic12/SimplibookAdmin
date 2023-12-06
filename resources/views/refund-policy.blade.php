@@ -11,7 +11,7 @@
     <!-- Page Header End -->
     <section class="privacy-section py-5">
         <div class="container">
-            {!! bs_data($settings,'refund_policy', 1) !!}
+            {!! bs_data_text($data_settings,'refund_policy', 1) !!}
         </div>
     </section>
 @endsection

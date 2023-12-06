@@ -93,7 +93,7 @@ class AddonController extends Controller
         ];
 
         $response = Http::post(base64_decode('aHR0cHM6Ly9jaGVjay42YW10ZWNoLmNvbS9hcGkvdjEvYWN0aXZhdGlvbi1jaGVjaw=='), $post)->json();
-        $status = base64_decode($response['active']) ?? base64_encode(1);
+        $status = $response['active'] ?? base64_encode(1);
 
         if ((int)base64_decode($status)) {
             $full_data['is_published'] = 1;

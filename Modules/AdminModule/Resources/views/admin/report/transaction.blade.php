@@ -18,7 +18,6 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="mb-3 fz-16">{{translate('Search_Data')}}</div>
-
                             <form action="{{route('admin.report.transaction', ['transaction_type'=>$query_params['transaction_type']])}}" method="POST">
                                 @csrf
                                 <div class="row">
@@ -34,6 +33,15 @@
                                             @foreach($providers as $provider)
                                                 <option value="{{$provider['id']}}" {{array_key_exists('provider_ids', $query_params) && in_array($provider['id'], $query_params['provider_ids']) ? 'selected' : '' }}>{{$provider['company_name']}} ({{$provider['company_phone']}})</option>
                                             @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-4 col-sm-6 mb-30">
+                                        <select class="js-select type__select" id="filter-by" name="filter_by">
+                                            <option value="all" {{array_key_exists('filter_by', $query_params) && $query_params['filter_by']=='all'?'selected':''}}>{{translate('All')}}</option>
+                                            <option value="collect_cash" {{array_key_exists('filter_by', $query_params) && $query_params['filter_by']=='collect_cash'?'selected':''}}>{{translate('Collect Cash')}}</option>
+                                            <option value="withdraw" {{array_key_exists('filter_by', $query_params) && $query_params['filter_by']=='withdraw'?'selected':''}}>{{translate('withdraw')}}</option>
+                                            <option value="payment" {{array_key_exists('filter_by', $query_params) && $query_params['filter_by']=='payment'?'selected':''}}>{{translate('payment')}}</option>
+                                            <option value="commission" {{array_key_exists('filter_by', $query_params) && $query_params['filter_by']=='commission'?'selected':''}}>{{translate('commission')}}</option>
                                         </select>
                                     </div>
                                     <div class="col-lg-4 col-sm-6 mb-30">
@@ -200,6 +208,7 @@
                                                     <th>{{translate('Debit')}}</th>
                                                     <th>{{translate('Credit')}}</th>
                                                     <th>{{translate('Balance')}}</th>
+                                                    <th>{{translate('Transaction Type')}}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -243,6 +252,9 @@
                                                                 <span class="disabled">{{with_currency_symbol($transaction->balance)}}</span>
                                                             @endif
                                                         </td>
+                                                        <td>
+                                                            <span>{{str_replace('_', ' ', $transaction->trx_type)}}</span>
+                                                        </td>
                                                     </tr>
                                                 @empty
                                                     <tr><td class="text-center" colspan="7">{{translate('Data_not_available')}}</td></tr>
@@ -271,6 +283,9 @@
             });
             $('.provider__select').select2({
                 placeholder: "{{translate('Select_provider')}}",
+            });
+            $('.type__select').select2({
+                placeholder: "{{translate('Select_Type')}}",
             });
         });
 
