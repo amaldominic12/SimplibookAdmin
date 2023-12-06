@@ -107,9 +107,11 @@ class AdminController extends Controller
 
         //zone wise booking data
         $zone_wise_bookings = $this->booking
-            ->with('zone')
+            ->with(['zone' => function ($query) {
+                $query->withoutGlobalScope('translate');
+            }])
             ->whereHas('zone', function ($query) {
-                $query->ofStatus(1);
+                $query->ofStatus(1)->withoutGlobalScope('translate');
             })
             ->whereMonth('created_at', now()->month)
             ->select('zone_id', DB::raw('count(*) as total'))

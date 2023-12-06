@@ -90,8 +90,13 @@ class PostBidController extends Controller
 
         //notification to customer
         $customer = Post::with(['customer'])->find($request['post_id'])?->customer;
-        if ($customer) {
-            device_notification_for_bidding($customer->fcm_token, translate('One provider bid offer for your requested service'), null, null, 'bidding', null, $post_bid->post_id, $request->user()->provider->id);
+        $title =  get_push_notification_message('customer_notification_for_provider_bid_offer', 'customer_notification', $customer?->current_language_key);
+        $data_info = [
+            'provider_name' => $request->user()?->provider?->company_name,
+        ];
+        info($request->user()->provider?->company_name);
+        if ($customer && $title) {
+            device_notification_for_bidding($customer->fcm_token, $title, null, null, 'bidding', null, $post_bid->post_id, $request->user()->provider->id, data: $data_info);
         }
 
         return response()->json(response_formatter(DEFAULT_STORE_200, null), 200);

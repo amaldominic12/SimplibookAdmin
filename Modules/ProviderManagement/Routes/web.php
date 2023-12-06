@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\ProviderManagement\Http\Controllers\Web\Provider\LanguageController;
 use Modules\ProviderManagement\Http\Controllers\Web\Provider\Report\Business\OverviewReportController;
 use Modules\ProviderManagement\Http\Controllers\Web\Provider\Report\BookingReportController;
 use Modules\ProviderManagement\Http\Controllers\Web\Provider\Report\Business\EarningReportController;
@@ -22,7 +23,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Web\Admin',
     Route::group(['prefix' => 'provider', 'as' => 'provider.'], function () {
         Route::any('list', 'ProviderController@index')->name('list');
         Route::any('status-update/{id}', 'ProviderController@status_update')->name('status_update');
+        Route::any('suspend-update/{id}', 'ProviderController@suspend_update')->name('suspend_update');
         Route::post('commission-update/{id}', 'ProviderController@commission_update')->name('commission_update');
+
+        Route::get('available-provider', 'ProviderController@available_provider_list')->name('available-provider-list');
+        Route::get('provider-info', 'ProviderController@provider_info')->name('provider-info');
+        Route::put('reassign-provider/{id}', 'ProviderController@reassign_provider')->name('reaasign-provider');
 
         Route::get('create', 'ProviderController@create')->name('create');
         Route::post('store', 'ProviderController@store')->name('store');
@@ -53,6 +59,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Web\Admin',
 
 
 Route::group(['prefix' => 'provider', 'as' => 'provider.', 'namespace' => 'Web\Provider', 'middleware' => ['provider']], function () {
+    Route::get('lang/{locale}', [LanguageController::class, 'lang'])->name('lang');
     Route::get('get-updated-data', 'ProviderController@get_updated_data')->name('get_updated_data');
     Route::get('dashboard', 'ProviderController@dashboard')->name('dashboard');
     Route::get('update-dashboard-earning-graph', 'ProviderController@update_dashboard_earning_graph')->name('update-dashboard-earning-graph');
@@ -61,11 +68,14 @@ Route::group(['prefix' => 'provider', 'as' => 'provider.', 'namespace' => 'Web\P
     Route::put('update-bank-info', 'ProviderController@update_bank_info')->name('update_bank_info');
 
     Route::any('account-info', 'ProviderController@account_info')->name('account_info');
+    Route::any('adjust', 'ProviderController@adjust')->name('adjust');
     Route::any('reviews/download', 'ProviderController@reviews_download')->name('reviews.download');
 
     //profile
     Route::get('profile-update', 'ProviderController@profile_info')->name('profile_update');
     Route::post('profile-update', 'ProviderController@update_profile');
+
+    Route::delete('delete', 'ProviderController@delete_provider')->name('delete_account');
 
     Route::group(['prefix' => 'chat', 'as' => 'chat.'], function () {
         Route::get('conversation', 'ProviderController@conversation')->name('conversation');

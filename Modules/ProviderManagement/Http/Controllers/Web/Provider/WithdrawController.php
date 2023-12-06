@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Modules\ProviderManagement\Entities\Provider;
 use Modules\ProviderManagement\Entities\WithdrawRequest;
@@ -101,7 +102,9 @@ class WithdrawController extends Controller
 
         $withdrawal_methods = $this->withdrawal_method->ofStatus(1)->get();
 
-        return view('providermanagement::provider.account.withdraw', compact('withdraw_requests', 'total_collected_cash', 'search', 'page_type', 'collectable_cash', 'withdrawal_methods', 'withdraw_request_amount', 'withdraw_request_amount'));
+        $page_type = 'withdraw_transaction';
+
+        return view('providermanagement::provider.account.withdraw', compact('withdraw_requests', 'total_collected_cash', 'search', 'page_type', 'collectable_cash', 'withdrawal_methods', 'withdraw_request_amount', 'withdraw_request_amount', 'page_type'));
     }
 
     /**
@@ -129,10 +132,40 @@ class WithdrawController extends Controller
         ]);
 
         $provider_user = $this->user->with(['account'])->find($request->user()->id);
+        $account = $provider_user->account;
 
-        if ($request['amount'] > $provider_user->account->account_receivable) {
-            Toastr::error(DEFAULT_400['message']);
-            return back();
+        $receivable = $account->account_receivable;
+        $payable = $account->account_payable;
+
+        $provider_info = $provider_user->provider;
+
+        if ($receivable > $payable && $payable != 0) {
+
+            $totalReceivable = $receivable - $payable ?? 0;
+
+            if ($request['amount'] > $totalReceivable) {
+                Toastr::error(DEFAULT_400['message']);
+                return back();
+            }
+
+            //Adjust
+            //$account->account_receivable -= $payable;
+
+            if($provider_info){
+                $provider_info->is_suspended = 0;
+                $provider_info->save();
+            }
+
+
+        } elseif ($receivable > $payable && $payable == 0) {
+
+            $totalReceivable = $receivable - $payable ?? 0;
+
+            if ($request['amount'] > $totalReceivable) {
+                Toastr::error(DEFAULT_400['message']);
+                return back();
+            }
+
         }
 
         //min max check
@@ -141,23 +174,35 @@ class WithdrawController extends Controller
             'maximum' => (float)(business_config('maximum_withdraw_amount', 'business_information'))->live_values ?? null,
         ];
 
-        if($request['amount'] < $withdraw_request_amount['minimum'] || $request['amount'] > $withdraw_request_amount['maximum']) {
+        if($account->account_receivable < $request['amount'] || $request['amount'] < $withdraw_request_amount['minimum'] || $request['amount'] > $withdraw_request_amount['maximum']) {
             Toastr::error(DEFAULT_400['message']);
             return back();
         }
 
-        withdraw_request_transaction($request->user()->id, $request['amount']);
 
-        $this->withdraw_request->create([
-            'user_id' => $request->user()->id,
-            'request_updated_by' => $request->user()->id,
-            'amount' => $request['amount'],
-            'request_status' => 'pending',
-            'is_paid' => 0,
-            'note' => $request['note'],
-            'withdrawal_method_id' => $request['withdraw_method'],
-            'withdrawal_method_fields' => $data,
-        ]);
+        DB::transaction(function () use ($account, $request, $payable, $data,) {
+            withdraw_request_transaction($request->user()->id, $request['amount']);
+
+            //admin payment transaction
+            if ($payable > 0){
+                $provider = Provider::where('user_id', $request->user()->id)->first();
+
+                //adjust
+                withdraw_request_accept_for_adjust_transaction($request->user()->id, $payable);
+                collect_cash_transaction($provider->id, $payable);
+            }
+
+            $this->withdraw_request->create([
+                'user_id' => $request->user()->id,
+                'request_updated_by' => $request->user()->id,
+                'amount' => $request['amount'],
+                'request_status' => 'pending',
+                'is_paid' => 0,
+                'note' => $request['note'],
+                'withdrawal_method_id' => $request['withdraw_method'],
+                'withdrawal_method_fields' => $data,
+            ]);
+        });
 
         Toastr::success(DEFAULT_200['message']);
         return back();

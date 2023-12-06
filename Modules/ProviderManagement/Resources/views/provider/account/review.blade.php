@@ -35,6 +35,10 @@
                         <a class="nav-link {{$page_type=='promotional_cost'?'active':''}}"
                            href="{{url()->current()}}?page_type=promotional_cost">{{translate('Promotional_Cost')}}</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{$page_type=='withdraw_transaction'?'active':''}}"
+                           href="{{route('provider.withdraw.list', ['page_type'=>'withdraw_transaction'])}}">{{translate('withdraw_list')}}</a>
+                    </li>
                 </ul>
             </div>
             <!-- End Nav Tabs -->

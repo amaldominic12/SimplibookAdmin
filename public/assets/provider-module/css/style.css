@@ -2929,7 +2929,8 @@ table.dataTable {
     content: "";
     position: absolute;
     inset-inline-start: 0;
-    inset-block-start: 0;
+    inset-block-start: 50%;
+    transform: translateY(-50%);
     inline-size: 1.375rem;
     block-size: 1.375rem;
     border: 0.0625rem solid var(--c1);
@@ -2943,7 +2944,8 @@ table.dataTable {
     block-size: 1rem;
     background-color: var(--c1);
     position: absolute;
-    inset-block-start: 0.1875rem;
+    inset-block-start: calc(50% - 8px);
+    transform: translateY(-50%);
     inset-inline-start: 0.1875rem;
     transition: all 150ms ease;
 }
@@ -4553,6 +4555,10 @@ label {
     color: #c1c1c1 !important;
 }
 
+.max-w360 {
+    max-inline-size: 22.5rem;
+}
+
 .max-w320 {
     max-inline-size: 20rem;
 }
@@ -4861,11 +4867,17 @@ label {
 
 .payment_method_grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    text-wrap: nowrap;
 }
 
-.payment_method_grid > div {
+/* .payment_method_grid > div {
     max-width: 200px;
+} */
+
+.payment_method_grid > div img {
+    max-width: 80px;
+    max-height: 40px;
 }
 
 .alert-close-btn {
@@ -4995,3 +5007,14 @@ label {
     background-color: transparent;
 }
 
+.square-btn {
+    --size: 26px;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--c1);
+    color: var(--white-color);
+}

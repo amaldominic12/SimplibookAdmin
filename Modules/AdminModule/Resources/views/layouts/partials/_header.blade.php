@@ -29,7 +29,8 @@
                                     <div class="dropdown-menu rounded">
                                         <div class="show-search-result">
                                             @foreach(get_routes('admin') as $route)
-                                                <a href="{{url('/')}}/{{$route}}" class="dropdown-item-text title-color hover-color-c2 text-capitalize">
+                                                <a href="{{url('/')}}/{{$route}}"
+                                                   class="dropdown-item-text title-color hover-color-c2 text-capitalize">
                                                     {{str_replace('admin','',implode(' ',explode('/',$route)))}}
                                                 </a>
                                             @endforeach
@@ -38,6 +39,39 @@
                                 </div>
                             </form>
                             <!-- End Header Search -->
+                        </li>
+
+                        <li class="nav-item max-sm-m-0">
+                            <div class="hs-unfold">
+                                <div>
+                                    @php( $local = session()->has('local')?session('local'):'en')
+                                    @php($lang = Modules\BusinessSettingsModule\Entities\BusinessSettings::where('key_name','system_language')->first())
+                                    @if ($lang)
+                                        <div class="topbar-text dropdown d-flex">
+                                            <a class="topbar-link dropdown-toggle d-flex align-items-center title-color gap-1 text-uppercase" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                @foreach ($lang?->live_values as $data)
+                                                    @if($data['code']==$local)
+                                                        <span class="material-icons">language</span>
+                                                        {{$data['code']}}
+                                                    @endif
+                                                @endforeach
+                                            </a>
+                                            <ul class="dropdown-menu lang-menu">
+                                                @foreach($lang['live_values'] as $key =>$data)
+                                                    @if($data['status']==1)
+                                                        <li>
+                                                            <a class="dropdown-item py-1" href="{{route('admin.lang',[$data['code']])}}">
+                                                                <span class="text-capitalize">{{$data['code']}}</span>
+                                                            </a>
+                                                        </li>
+                                                    @endif
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
+
+                                </div>
+                            </div>
                         </li>
                         <li>
                             <!-- Header Messages -->

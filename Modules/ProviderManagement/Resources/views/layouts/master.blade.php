@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+@php
+    $site_direction = session()->get('provider_site_direction');
+@endphp
+<html lang="en" dir="{{$site_direction}}">
 
 <head>
     <!-- Page Title -->
@@ -50,7 +53,6 @@
 <body>
 <script>
     localStorage.theme && document.querySelector('body').setAttribute("theme", localStorage.theme);
-    localStorage.dir && document.querySelector('html').setAttribute("dir", localStorage.dir);
 </script>
 
 <!-- Offcanval Overlay -->
@@ -233,7 +235,7 @@
             sessionStorage.setItem("notification_count", parseInt(notification_count) + parseInt(count));
         }
     }
-
+    @if(!auth()->user()?->provider?->is_suspended || !business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values)
     setInterval(function () {
         $.get({
             url: '{{ route('provider.get_updated_data') }}',
@@ -295,6 +297,8 @@
             },
         });
     }, 10000);
+    @endif
+
 </script>
 <!-- ======= END **AUTO RUNNABLE** SCRIPTS ======= -->
 

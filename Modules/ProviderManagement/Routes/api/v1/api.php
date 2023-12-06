@@ -22,6 +22,7 @@ Route::group(['prefix' => 'provider', 'as' => 'provider.', 'namespace' => 'Api\V
     Route::post('forgot-password', 'ProviderController@forgot_password');
     Route::post('otp-verification', 'ProviderController@otp_verification');
     Route::put('reset-password', 'ProviderController@reset_password');
+    Route::post('change-language', 'ProviderController@change_language');
 });
 
 Route::group(['prefix' => 'provider', 'as' => 'provider.', 'namespace' => 'Api\V1\Provider', 'middleware' => ['auth:api']], function () {
@@ -33,12 +34,16 @@ Route::group(['prefix' => 'provider', 'as' => 'provider.', 'namespace' => 'Api\V
 
     Route::get('config', [ProviderConfigController::class, 'config'])->withoutMiddleware('auth:api');
     Route::get('info', 'ProviderController@index');
+    Route::get('adjust', 'ProviderController@adjust');
     Route::get('notifications', 'ProviderController@notifications');
     Route::put('update/fcm-token', 'ProviderController@update_fcm_token');
     Route::put('update/profile', 'ProviderController@update_profile');
     Route::get('config/get-routes', [ProviderConfigController::class, 'get_routes']);
+    Route::delete('delete', 'ProviderController@delete_provider');
+    Route::get('transaction', 'ProviderController@transaction');
 
     Route::get('subscribed/sub-categories', 'ProviderController@subscribed_sub_categories');
+
 
     Route::group(['prefix' => 'service', 'as' => 'service.',], function () {
         Route::post('update-subscription', 'ServiceController@update_subscription');
@@ -79,6 +84,10 @@ Route::group(['prefix' => 'customer', 'as' => 'customer.', 'namespace' => 'Api\V
         Route::get('list-by-sub-category', [ProviderController::class, 'get_provider_list_by_sub_category']);
     });
     Route::get('provider-details', [ProviderController::class, 'get_provider_details']);
+
+    Route::post('available-provider', [ProviderController::class, 'get_available_provider']);
+    Route::post('available-service', [ProviderController::class, 'get_available_service']);
+    Route::post('rebooking-information', [ProviderController::class, 'rebooking_information']);
 });
 
 //admin

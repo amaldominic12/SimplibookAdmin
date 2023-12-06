@@ -23,28 +23,95 @@
                             <form action="{{route('admin.sub-category.store')}}" method="post"
                                   enctype="multipart/form-data">
                                 @csrf
+                                @php($language= Modules\BusinessSettingsModule\Entities\BusinessSettings::where('key_name','system_language')->first())
+                                @php($default_lang = str_replace('_', '-', app()->getLocale()))
+                                @if($language)
+                                    <ul class="nav nav--tabs border-color-primary mb-4">
+                                        <li class="nav-item">
+                                            <a class="nav-link lang_link active"
+                                               href="#"
+                                               id="default-link">{{translate('default')}}</a>
+                                        </li>
+                                        @foreach ($language?->live_values as $lang)
+                                            <li class="nav-item">
+                                                <a class="nav-link lang_link"
+                                                   href="#"
+                                                   id="{{ $lang['code'] }}-link">{{ get_language_name($lang['code']) }}</a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
                                 <div class="row">
                                     <div class="col-lg-8 mb-5 mb-lg-0">
                                         <div class="d-flex flex-column">
                                             <select class="js-select theme-input-style w-100" name="parent_id">
-                                                <option value="0" selected disabled>{{translate('Select_Category_Name')}}</option>
+                                                <option value="0" selected
+                                                        disabled>{{translate('Select_Category_Name')}}</option>
                                                 @foreach($main_categories as $item)
                                                     <option value="{{$item['id']}}">{{$item->name}}</option>
                                                 @endforeach
                                             </select>
 
-                                            <div class="form-floating mb-30 mt-30">
-                                                <input type="text" name="name" class="form-control"
-                                                       value="{{old('name')}}"
-                                                       placeholder="{{translate('sub_category_name')}}" required>
-                                                <label>{{translate('sub_category_name')}}</label>
-                                            </div>
+                                            @if($language)
+                                                <div class="lang-form" id="default-form">
+                                                    <div class="form-floating mb-30 mt-30">
+                                                        <input type="text" name="name[]" class="form-control"
+                                                               placeholder="{{translate('sub_category_name')}}"
+                                                        >
+                                                        <label>{{translate('sub_category_name')}}
+                                                            ({{ translate('default') }})</label>
+                                                    </div>
 
-                                            <div class="form-floating mb-30">
-                                                <textarea type="text" name="short_description" class="form-control"
+                                                    <div class="form-floating mb-30">
+                                                <textarea type="text" name="short_description[]" class="form-control"
+                                                ></textarea>
+                                                        <label>{{translate('short_description')}}
+                                                            ({{ translate('default') }})</label>
+                                                    </div>
+                                                </div>
+
+                                                <input type="hidden" name="lang[]" value="default">
+                                                @foreach ($language?->live_values as $lang)
+                                                    <div class="lang-form d-none" id="{{ $lang['code'] }}-form">
+                                                        <div class="form-floating mb-30 mt-30">
+                                                            <input type="text" name="name[]" class="form-control"
+                                                                   oninvalid="document.getElementById('en-link').click()"
+                                                                   placeholder="{{translate('sub_category_name')}} "
+                                                                   {{$lang['status'] == '1' ? 'required':''}}
+                                                                   @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>
+                                                            <label>{{translate('sub_category_name')}}
+                                                                ({{ strtoupper($lang['code']) }})</label>
+                                                        </div>
+
+                                                        <div class="form-floating mb-30">
+                                                            <textarea type="text" name="short_description[]"
+                                                                      class="form-control"
+                                                                      {{$lang['status'] == '1' ? 'required':''}}
+                                                                      @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif></textarea>
+                                                            <label>{{translate('short_description')}}
+                                                                ({{ strtoupper($lang['code']) }})</label>
+                                                        </div>
+                                                        <input type="hidden" name="lang[]" value="{{$lang['code']}}">
+                                                    </div>
+                                                @endforeach
+                                            @else
+                                                <div class="form-floating mb-30 mt-30 lang-form">
+                                                    <input type="text" name="name[]" class="form-control"
+                                                           value="{{old('name')}}"
+                                                           placeholder="{{translate('sub_category_name')}}" required>
+                                                    <label>{{translate('sub_category_name')}}
+                                                        ({{ translate('default') }})</label>
+                                                </div>
+
+                                                <div class="form-floating mb-30">
+                                                <textarea type="text" name="short_description[]" class="form-control"
                                                           required></textarea>
-                                                <label>{{translate('short_description')}}</label>
-                                            </div>
+                                                    <label>{{translate('short_description')}}
+                                                        ({{ translate('default') }})</label>
+                                                </div>
+
+                                                <input type="hidden" name="lang[]" value="default">
+                                            @endif
                                         </div>
                                     </div>
                                     <div class="col-lg-4">
@@ -139,7 +206,9 @@
                                                     <span class="material-icons">file_download</span> download
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                                                    <li><a class="dropdown-item" href="{{route('admin.sub-category.download')}}?search={{$search}}">{{translate('excel')}}</a></li>
+                                                    <li><a class="dropdown-item"
+                                                           href="{{route('admin.sub-category.download')}}?search={{$search}}">{{translate('excel')}}</a>
+                                                    </li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -148,14 +217,14 @@
                                     <div class="table-responsive">
                                         <table id="example" class="table align-middle">
                                             <thead class="text-nowrap">
-                                                <tr>
-                                                    <th>{{translate('SL')}}</th>
-                                                    <th>{{translate('name')}}</th>
-                                                    <th>{{translate('parent_category')}}</th>
-                                                    <th>{{translate('service_count')}}</th>
-                                                    <th>{{translate('status')}}</th>
-                                                    <th>{{translate('action')}}</th>
-                                                </tr>
+                                            <tr>
+                                                <th>{{translate('SL')}}</th>
+                                                <th>{{translate('name')}}</th>
+                                                <th>{{translate('parent_category')}}</th>
+                                                <th>{{translate('service_count')}}</th>
+                                                <th>{{translate('status')}}</th>
+                                                <th>{{translate('action')}}</th>
+                                            </tr>
                                             </thead>
                                             <tbody>
                                             @foreach($sub_categories as $key=>$category)
@@ -181,7 +250,7 @@
                                                             </a>
                                                             <button type="button"
                                                                     @if(env('APP_ENV')!='demo')
-                                                                    onclick="form_alert('delete-{{$category->id}}','{{translate('want_to_delete_this_sub_category')}}?')"
+                                                                        onclick="form_alert('delete-{{$category->id}}','{{translate('want_to_delete_this_sub_category')}}?')"
                                                                     @endif
                                                                     class="table-actions_delete bg-transparent border-0 p-0 demo_check">
                                                                 <span class="material-icons">delete</span>
@@ -201,7 +270,7 @@
                                         </table>
                                     </div>
                                     <div class="d-flex justify-content-end">
-                                            {!! $sub_categories->links() !!}
+                                        {!! $sub_categories->links() !!}
                                     </div>
                                 </div>
                             </div>
@@ -218,6 +287,20 @@
     <script>
         $(document).ready(function () {
             $('.js-select').select2();
+        });
+    </script>
+    <script>
+
+        $(".lang_link").on('click', function (e) {
+            e.preventDefault();
+            $(".lang_link").removeClass('active');
+            $(".lang-form").addClass('d-none');
+            $(this).addClass('active');
+
+            let form_id = this.id;
+            let lang = form_id.substring(0, form_id.length - 5);
+            console.log(lang);
+            $("#" + lang + "-form").removeClass('d-none');
         });
     </script>
     <script src="{{asset('public/assets/admin-module')}}/plugins/dataTables/jquery.dataTables.min.js"></script>

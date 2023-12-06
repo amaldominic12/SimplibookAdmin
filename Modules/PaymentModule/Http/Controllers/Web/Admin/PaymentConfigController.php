@@ -62,8 +62,9 @@ class PaymentConfigController extends Controller
 
         $type = 'digital_payment';
         $search = $request['search'] ?? '';
+        $web_page = 'offline_payment';
 
-        return view('paymentmodule::admin.payment-gateway-config', compact('data_values', 'published_status', 'payment_url', 'type'));
+        return view('paymentmodule::admin.payment-gateway-config', compact('data_values', 'published_status', 'payment_url', 'type', 'web_page'));
     }
 
     /**

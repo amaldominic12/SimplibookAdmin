@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
+use Modules\BusinessSettingsModule\Entities\Translation;
 use Modules\PromotionManagement\Entities\Banner;
 use Modules\PromotionManagement\Entities\PushNotification;
 use Modules\ZoneManagement\Entities\Zone;
@@ -148,6 +149,7 @@ class PushNotificationController extends Controller
     }
 
 
+
     /**
      * Show the form for editing the specified resource.
      * @param string $id
@@ -202,7 +204,6 @@ class PushNotificationController extends Controller
         return back();
     }
 
-
     /**
      * Remove the specified resource from storage.
      * @param Request $request
@@ -211,10 +212,10 @@ class PushNotificationController extends Controller
      */
     public function destroy(Request $request, $id): RedirectResponse
     {
-        $pushNotification = $this->pushNotification->where('id', $id)->first();
+        $pushNotification = $this->pushNotification->where('id', $id)->withoutGlobalScope('translate')->first();
         if (isset($pushNotification)){
             file_remover('push-notification/', $pushNotification['cover_image']);
-            $this->pushNotification->where('id', $id)->delete();
+            $this->pushNotification->where('id', $id)->withoutGlobalScope('translate')->delete();
         }
 
         Toastr::success(DEFAULT_DELETE_200['message']);

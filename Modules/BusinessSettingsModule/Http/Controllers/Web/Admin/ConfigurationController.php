@@ -14,24 +14,35 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Modules\BusinessSettingsModule\Entities\BusinessSettings;
+use Modules\BusinessSettingsModule\Entities\Translation;
+use Modules\PaymentModule\Entities\Setting;
 
 class ConfigurationController extends Controller
 {
 
     private BusinessSettings $business_setting;
 
-    public function __construct(BusinessSettings $business_setting)
+    private Setting $addon_settings;
+
+    public function __construct(BusinessSettings $business_setting, Setting $addon_settings)
     {
         $this->business_setting = $business_setting;
+        $this->addon_settings = $addon_settings;
     }
 
     /**
      * Display a listing of the resource.
      */
-    public function notification_settings_get(): Factory|View|Application
+    public function notification_settings_get(Request $request): Factory|View|Application
     {
-        $data_values = $this->business_setting->whereIn('settings_type', ['notification_settings', 'notification_messages'])->get();
-        return view('businesssettingsmodule::admin.notification', compact('data_values'));
+        $request->validate([
+            'type' => 'required|in:customers,providers,serviceman',
+        ]);
+
+        $query_params = $request->type;
+        $data_settings_values = $this->business_setting->whereIn('settings_type', ['notification_settings'])->get();
+        $data_values = $this->business_setting->whereIn('settings_type', ['customer_notification', 'provider_notification', 'serviceman_notification'])->with('translations')->get();
+        return view('businesssettingsmodule::admin.notification', compact('data_values', 'query_params', 'data_settings_values'));
     }
 
     /**
@@ -85,57 +96,85 @@ class ConfigurationController extends Controller
         return response()->json(response_formatter(DEFAULT_UPDATE_200), 200);
     }
 
-    /**
-     * Display a listing of the resource.
-     * @param Request $request
-     * @return JsonResponse
-     * @throws ValidationException
-     */
-    public function message_settings_set(Request $request): JsonResponse
+    public function message_settings_set(Request $request): RedirectResponse
     {
-        $request[$request['id'] . '_status'] = $request['status'];
-        $request[$request['id'] . '_message'] = $request['message'];
+        collect(['status'])->each(fn($item, $key) => $request[$item] = $request->has($item) ? (int)$request[$item] : 0);
 
-        $validator = Validator::make($request->all(), [
-            'booking_place_message' => 'string',
-            'booking_place_status' => 'in:0,1',
-            'booking_accepted_message' => 'string',
-            'booking_accepted_status' => 'in:0,1',
-            'booking_refund_message' => 'string',
-            'booking_refund_status' => 'in:0,1',
-            'booking_cancel_message' => 'string',
-            'booking_cancel_status' => 'in:0,1',
-            'booking_service_complete_message' => 'string',
-            'booking_service_complete_status' => 'in:0,1',
-            'booking_ongoing_message' => 'string',
-            'booking_ongoing_status' => 'in:0,1',
-        ]);
+        $column_name = $request->id . '_message';
+        $required_message = $column_name . '.0.' . 'required';
+        $required_message_value = "default_{$column_name}_is_required";
 
-        if ($validator->fails()) {
-            return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        $request->validate([
+            'type' => 'required|in:customers,providers,serviceman',
+            $column_name . '.0' => 'required'
+        ],
+            [
+                $required_message => translate($required_message_value),
+            ]
+        );
+
+        if ($request->type === 'customers') {
+            $notificationArray = NOTIFICATION_FOR_USER;
+            $settings_type = 'customer_notification';
+        } elseif ($request->type === 'providers') {
+            $notificationArray = NOTIFICATION_FOR_PROVIDER;
+            $settings_type = 'provider_notification';
+        } elseif ($request->type === 'serviceman') {
+            $notificationArray = NOTIFICATION_FOR_SERVICEMAN;
+            $settings_type = 'serviceman_notification';
+        } else {
+            $notificationArray = [];
+            $settings_type = '';
         }
 
-        $booking_keys = ['booking_place', 'booking_accepted', 'booking_refund', 'booking_cancel', 'booking_service_complete', 'booking_ongoing'];
-        foreach ($booking_keys as $key => $value) {
-            if ($request->has($value . '_status') && $request->has($value . '_message')) {
-                $this->business_setting->updateOrCreate(['key_name' => $value, 'settings_type' => 'notification_messages'], [
-                    'key_name' => $value,
-                    'live_values' => [
-                        $value . '_status' => $request[$value . '_status'],
-                        $value . '_message' => $request[$value . '_message'],
-                    ],
-                    'test_values' => [
-                        $value . '_status' => $request[$value . '_status'],
-                        $value . '_message' => $request[$value . '_message'],
-                    ],
-                    'settings_type' => 'notification_messages',
-                    'mode' => 'live',
-                    'is_active' => $request[$value . '_status'],
-                ]);
+        $request->validate([
+            'id' => 'required|in:' . implode(',', array_column($notificationArray, 'key')),
+            "$column_name.0" => 'required'
+        ]);
+
+        $business_data = $this->business_setting->updateOrCreate(['key_name' => $request->id, 'settings_type' => $settings_type], [
+            'key_name' => $request->id,
+            'live_values' => [
+                $request->id . '_status' => $request['status'],
+                $request->id . '_message' => $request[$column_name][array_search('default', $request->lang)],
+            ],
+            'test_values' => [
+                $request->id . '_status' => $request['status'],
+                $request->id . '_message' => $request[$column_name][array_search('default', $request->lang)],
+            ],
+            'is_active' => $request['status'],
+        ]);
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request[$column_name][$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\BusinessSettingsModule\Entities\BusinessSettings',
+                            'translationable_id' => $business_data->id,
+                            'locale' => $key,
+                            'key' => $business_data->key_name],
+                        ['value' => $business_data[$column_name]]
+                    );
+                }
+            } else {
+                if ($request[$column_name][$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\BusinessSettingsModule\Entities\BusinessSettings',
+                            'translationable_id' => $business_data->id,
+                            'locale' => $key,
+                            'key' => $business_data->key_name],
+                        ['value' => $request[$column_name][$index]]
+                    );
+                }
             }
         }
 
-        return response()->json(response_formatter(DEFAULT_UPDATE_200), 200);
+        Toastr::success(DEFAULT_UPDATE_200['message']);
+        return back();
     }
 
 
@@ -186,12 +225,104 @@ class ConfigurationController extends Controller
 
     /**
      * Display a listing of the resource.
+     * @param Request $request
      * @return Application|Factory|View
      */
-    public function third_party_config_get(): View|Factory|Application
+    public function third_party_config_get(Request $request): View|Factory|Application
     {
-        $data_values = $this->business_setting->whereIn('settings_type', ['third_party'])->get();
-        return view('businesssettingsmodule::admin.third-party', compact('data_values'));
+        $request->validate([
+            'web_page' => 'required|in:google_map,recaptcha,push_notification,apple_login,email_config,sms_config,payment_config,app_settings,social_login'
+        ]);
+
+        $web_page = $request['web_page'];
+        $published_status = 0;
+        $payment_url = '';
+        $type = '';
+        $customer_data_values = [];
+        $provider_data_values = [];
+        $serviceman_data_values = [];
+        $social_login_configs = [];
+        $data_values = [];
+
+        if ($web_page == 'sms_config') {
+
+            try {
+                $full_data = include('Modules/Gateways/Addon/info.php');
+                $published_status = $full_data['is_published'] == 1 ? 1 : 0;
+            } catch (\Exception $exception) {
+            }
+
+            $routes = config('addon_admin_routes');
+            $desiredName = 'sms_setup';
+            $payment_url = '';
+
+            foreach ($routes as $routeArray) {
+                foreach ($routeArray as $route) {
+                    if ($route['name'] === $desiredName) {
+                        $payment_url = $route['url'];
+                        break 2;
+                    }
+                }
+            }
+            $data_values = $this->addon_settings
+                ->whereIn('settings_type', ['sms_config'])
+                ->whereIn('key_name', array_column(SMS_GATEWAY, 'key'))
+                ->get();
+        } elseif ($web_page == 'payment_config') {
+
+            Validator::make($request->all(), [
+                'type' => 'in:digital_payment,offline_payment'
+            ])->validate();
+
+            try {
+                $full_data = include('Modules/Gateways/Addon/info.php');
+                $published_status = $full_data['is_published'] == 1 ? 1 : 0;
+            } catch (\Exception $exception) {
+            }
+
+            $routes = config('addon_admin_routes');
+            $desiredName = 'payment_setup';
+            $payment_url = '';
+
+            foreach ($routes as $routeArray) {
+                foreach ($routeArray as $route) {
+                    if ($route['name'] === $desiredName) {
+                        $payment_url = $route['url'];
+                        break 2;
+                    }
+                }
+            }
+
+            $data_values = $this->addon_settings
+                ->whereIn('settings_type', ['payment_config'])
+                ->whereIn('key_name', array_merge(array_column(PAYMENT_METHODS, 'key'), ['ssl_commerz']))
+                ->get();
+
+            $type = $request->type;
+        } else if ($web_page == 'app_settings') {
+            $values = $this->business_setting->whereIn('key_name', ['customer_app_settings'])->first();
+            $customer_data_values = isset($values) ? json_decode($values->live_values) : null;
+
+            $values = $this->business_setting->whereIn('key_name', ['provider_app_settings'])->first();
+            $provider_data_values = isset($values) ? json_decode($values->live_values) : null;
+
+            $values = $this->business_setting->whereIn('key_name', ['serviceman_app_settings'])->first();
+            $serviceman_data_values = isset($values) ? json_decode($values->live_values) : null;
+        } else if ($web_page == 'social_login') {
+            $values = $this->business_setting->whereIn('key_name', ['customer_app_settings'])->first();
+            $customer_data_values = isset($values) ? json_decode($values->live_values) : null;
+
+            $values = $this->business_setting->whereIn('key_name', ['provider_app_settings'])->first();
+            $provider_data_values = isset($values) ? json_decode($values->live_values) : null;
+
+            $values = $this->business_setting->whereIn('key_name', ['serviceman_app_settings'])->first();
+            $serviceman_data_values = isset($values) ? json_decode($values->live_values) : null;
+            $social_login_configs = $this->business_setting->where('settings_type', 'social_login')->get();
+        } else {
+            $data_values = $this->business_setting->where('key_name', $web_page)->first();
+        }
+
+        return view('businesssettingsmodule::admin.third-party', compact('data_values', 'web_page', 'published_status', 'payment_url', 'type', 'customer_data_values', 'provider_data_values', 'serviceman_data_values', 'social_login_configs'));
     }
 
     /**
@@ -389,16 +520,15 @@ class ConfigurationController extends Controller
      */
     public function set_customer_settings(Request $request): RedirectResponse
     {
-        if($request['web_page'] == 'wallet') {
+        if ($request['web_page'] == 'wallet') {
             $validator = Validator::make($request->all(), [
                 //wallet
                 'customer_wallet' => 'in:0,1',
             ]);
 
             $filter = $validator->validated();
-            $filter['customer_wallet'] = $request['customer_wallet']??0;
-        }
-        elseif ($request['web_page'] == 'loyalty_point') {
+            $filter['customer_wallet'] = $request['customer_wallet'] ?? 0;
+        } elseif ($request['web_page'] == 'loyalty_point') {
             $validator = Validator::make($request->all(), [
                 //loyalty point
                 'customer_loyalty_point' => 'in:0,1',
@@ -408,9 +538,8 @@ class ConfigurationController extends Controller
             ]);
 
             $filter = $validator->validated();
-            $filter['customer_loyalty_point'] = $request['customer_loyalty_point']??0;
-        }
-        elseif ($request['web_page'] == 'referral_earning') {
+            $filter['customer_loyalty_point'] = $request['customer_loyalty_point'] ?? 0;
+        } elseif ($request['web_page'] == 'referral_earning') {
             $validator = Validator::make($request->all(), [
                 //referral earning
                 'customer_referral_earning' => 'in:0,1',
@@ -418,7 +547,7 @@ class ConfigurationController extends Controller
             ]);
 
             $filter = $validator->validated();
-            $filter['customer_referral_earning'] = $request['customer_referral_earning']??0;
+            $filter['customer_referral_earning'] = $request['customer_referral_earning'] ?? 0;
         } else {
             Toastr::success(DEFAULT_400['message']);
             return back();
@@ -437,5 +566,17 @@ class ConfigurationController extends Controller
 
         Toastr::success(DEFAULT_UPDATE_200['message']);
         return back();
+    }
+
+    public function language_setup(Request $request): Factory|View|Application
+    {
+        $system_language = BusinessSettings::where('key_name', 'system_language')->where('settings_type', 'business_information')->first();
+
+        return view('businesssettingsmodule::admin.language-setup', compact('system_language'));
+    }
+
+    public function update_language_setup(Request $request)
+    {
+        //
     }
 }

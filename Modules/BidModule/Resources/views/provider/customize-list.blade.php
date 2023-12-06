@@ -130,8 +130,6 @@
                                                         <div class="customer-name fw-medium">
                                                             {{$post->customer?->first_name.' '.$post->customer?->last_name}}
                                                         </div>
-                                                        <a href="tel:{{$post->customer?->phone}}"
-                                                        class="fs-12">{{$post->customer?->phone}}</a>
                                                     </div>
                                                 @else
                                                     <div><small

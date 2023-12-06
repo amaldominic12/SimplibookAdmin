@@ -1,10 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
+use Modules\BookingModule\Entities\Booking;
 use Modules\PaymentModule\Entities\Bonus;
 use Modules\BusinessSettingsModule\Entities\BusinessSettings;
 
@@ -12,13 +14,13 @@ if (!function_exists('translate')) {
     function translate($key)
     {
         try {
-            App::setLocale('en');
-            $lang_array = include(base_path('resources/lang/' . 'en' . '/lang.php'));
+            $local = app()->getLocale();
+            $lang_array = include(base_path('resources/lang/' . $local . '/lang.php'));
             $processed_key = ucfirst(str_replace('_', ' ', str_ireplace(['\'', '"', ',', ';', '<', '>', '?'], ' ', $key)));
             if (!array_key_exists($key, $lang_array)) {
                 $lang_array[$key] = $processed_key;
                 $str = "<?php return " . var_export($lang_array, true) . ";";
-                file_put_contents(base_path('resources/lang/' . 'en' . '/lang.php'), $str);
+                file_put_contents(base_path('resources/lang/' . $local . '/lang.php'), $str);
                 $result = $processed_key;
             } else {
                 $result = __('lang.' . $key);
@@ -36,6 +38,24 @@ if (!function_exists('bs_data')) {
         try {
             if (env('APP_ENV') == 'local' || env('APP_ENV') == 'live' || $required) {
                 $config = $settings->where('key_name', $key)->first()->live_values;
+            } else {
+                $config = null;
+            }
+
+        } catch (Exception $exception) {
+            return null;
+        }
+
+        return (isset($config)) ? $config : null;
+    }
+}
+
+if (!function_exists('bs_data_text')) {
+    function bs_data_text($settings, $key, $required = 0)
+    {
+        try {
+            if (env('APP_ENV') == 'local' || env('APP_ENV') == 'live' || $required) {
+                $config = $settings->where('key', $key)->first()->value;
             } else {
                 $config = null;
             }
@@ -183,18 +203,18 @@ if (!function_exists('get_add_money_bonus')) {
     function get_add_money_bonus($amount)
     {
         $bonuses = Bonus::where('is_active', 1)
-        ->whereDate('start_date', '<=', now())
-        ->whereDate('end_date', '>=', now())
-        ->where('minimum_add_amount', '<=', $amount)
-        ->get();
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->where('minimum_add_amount', '<=', $amount)
+            ->get();
 
         $bonuses = $bonuses->where('minimum_add_amount', $bonuses->max('minimum_add_amount'));
 
-        foreach ($bonuses as $key=>$item) {
-            $item->applied_bonus_amount = $item->bonus_amount_type == 'percent' ? ($amount*$item->bonus_amount)/100 : $item->bonus_amount;
+        foreach ($bonuses as $key => $item) {
+            $item->applied_bonus_amount = $item->bonus_amount_type == 'percent' ? ($amount * $item->bonus_amount) / 100 : $item->bonus_amount;
 
             //max bonus check
-            if($item->bonus_amount_type == 'percent' && $item->applied_bonus_amount > $item->maximum_bonus_amount) {
+            if ($item->bonus_amount_type == 'percent' && $item->applied_bonus_amount > $item->maximum_bonus_amount) {
                 $item->applied_bonus_amount = $item->maximum_bonus_amount;
             }
         }
@@ -204,18 +224,18 @@ if (!function_exists('get_add_money_bonus')) {
 }
 
 if (!function_exists('get_distance')) {
-    function get_distance(array $originCoordinates,array $destinationCoordinates, $unit = 'K'): float
+    function get_distance(array $originCoordinates, array $destinationCoordinates, $unit = 'K'): float
     {
-        $lat1 = (float) $originCoordinates[0];
-        $lat2 = (float) $destinationCoordinates[0];
-        $lon1 = (float) $originCoordinates[1];
-        $lon2 = (float) $destinationCoordinates[1];
+        $lat1 = (float)$originCoordinates[0];
+        $lat2 = (float)$destinationCoordinates[0];
+        $lon1 = (float)$originCoordinates[1];
+        $lon2 = (float)$destinationCoordinates[1];
 
         if (($lat1 == $lat2) && ($lon1 == $lon2)) {
             return 0;
         } else {
             $theta = $lon1 - $lon2;
-            $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) +  cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
+            $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
             $dist = acos($dist);
             $dist = rad2deg($dist);
             $miles = $dist * 60 * 1.1515;
@@ -230,3 +250,104 @@ if (!function_exists('get_distance')) {
         }
     }
 }
+
+if (!function_exists('provider_warning_amount_calculate')) {
+    function provider_warning_amount_calculate($payable, $receivable): bool|string
+    {
+        // Check if payable is greater than receivable
+        if ($payable > $receivable) {
+            $limit_amount = (business_config('max_cash_in_hand_limit_provider', 'provider_config'))->live_values ?? 0;
+            $amount = $payable - $receivable;
+
+            $percentage_80 = 0.8 * $limit_amount;
+            $percentage_100 = $limit_amount;
+
+            $warningType = '';
+
+            if ($amount >= $percentage_80) {
+                $warningType = '80_percent';
+            }
+
+            if ($amount >= $percentage_100) {
+                $warningType = '100_percent';
+            }
+            return $warningType;
+        }
+        return false;
+    }
+}
+
+if (!function_exists('remove_invalid_charcaters')) {
+    function remove_invalid_charcaters($str): array|string
+    {
+        return str_ireplace(['\'', '"', ',', ';', '<', '>', '?'], ' ', $str);
+    }
+}
+
+if (!function_exists('text_variable_data_format')) {
+    function text_variable_data_format($title, $booking_id, $type = null, $data = null): array|string
+    {
+        if ($type == 'booking' || $type == 'offline-payment') {
+            $booking = Booking::where('id', $booking_id)->first();
+
+            if (!$booking) {
+                return $title;
+            }
+
+            $replaceMap = [
+                '{{providerName}}' => $booking?->provider?->company_name,
+                '{{bookingId}}' => $booking->readable_id,
+                '{{scheduleTime}}' => $booking->service_schedule,
+                '{{userName}}' => $booking->customer?->first_name . ' ' . $booking->customer?->last_name,
+                '{{zoneName}}' => $booking?->zone?->name,
+                '{{serviceManName}}' => $booking?->serviceman?->user?->first_name . ' ' . $booking?->serviceman?->user?->last_name,
+            ];
+        } else {
+            // Check if $data is an array and not empty
+            if (is_array($data) && !empty($data)) {
+                $replaceMap = [
+                    '{{providerName}}' => $data['provider_name'] ?? '',
+                    '{{scheduleTime}}' => $data['schedule_time'] ?? '',
+                    '{{userName}}' => $data['user_name'] ?? '',
+                    '{{zoneName}}' => $data['zone_name'] ?? '',
+                    '{{serviceManName}}' => $data['service_man_name'] ?? '',
+                ];
+            } else {
+                $replaceMap = [
+                    '{{providerName}}' => '',
+                    '{{scheduleTime}}' => '',
+                    '{{userName}}' => '',
+                    '{{zoneName}}' => '',
+                    '{{serviceManName}}' => '',
+                ];
+            }
+        }
+
+        $formattedTitle = str_replace(array_keys($replaceMap), array_values($replaceMap), $title);
+
+        if ($formattedTitle === $title) {
+            return $title;
+        }
+
+        return $formattedTitle;
+    }
+}
+
+
+if (!function_exists('config_settings')) {
+    function config_settings($key, $settings_type)
+    {
+        try {
+            $config = DB::table('addon_settings')->where('key_name', $key)
+                ->where('settings_type', $settings_type)->first();
+        } catch (Exception $exception) {
+            return null;
+        }
+
+        return (isset($config)) ? $config : null;
+    }
+}
+
+
+
+

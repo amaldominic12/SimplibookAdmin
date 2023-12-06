@@ -119,7 +119,7 @@
                                                     {{translate('Company_Id')}}</option>
                                                 <option value="nid"
                                                     {{old('identity_type') == 'passport' ? 'selected': ''}}>
-                                                    {{translate('Aadhaar')}}</option>
+                                                    {{translate('nid')}}</option>
                                                 <option value="trade_license"
                                                     {{old('identity_type') == 'nid' ? 'selected': ''}}>
                                                     {{translate('Trade_License')}}</option>

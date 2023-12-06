@@ -114,16 +114,16 @@ class PostBidController extends Controller
                     $decoded = json_decode($value, true);
 
                     if (json_last_error() !== JSON_ERROR_NONE) {
-                        $fail($attribute.' must be a valid JSON string.');
+                        $fail($attribute . ' must be a valid JSON string.');
                         return;
                     }
 
-                    if (is_null($decoded['lat']) || $decoded['lat'] == '') $fail($attribute.' must contain "lat" properties.');
-                    if (is_null($decoded['lon']) || $decoded['lon'] == '') $fail($attribute.' must contain "lon" properties.');
-                    if (is_null($decoded['address']) || $decoded['address'] == '') $fail($attribute.' must contain "address" properties.');
-                    if (is_null($decoded['contact_person_name']) || $decoded['contact_person_name'] == '') $fail($attribute.' must contain "contact_person_name" properties.');
-                    if (is_null($decoded['contact_person_number']) || $decoded['contact_person_number'] == '') $fail($attribute.' must contain "contact_person_number" properties.');
-                    if (is_null($decoded['address_label']) || $decoded['address_label'] == '') $fail($attribute.' must contain "address_label" properties.');
+                    if (is_null($decoded['lat']) || $decoded['lat'] == '') $fail($attribute . ' must contain "lat" properties.');
+                    if (is_null($decoded['lon']) || $decoded['lon'] == '') $fail($attribute . ' must contain "lon" properties.');
+                    if (is_null($decoded['address']) || $decoded['address'] == '') $fail($attribute . ' must contain "address" properties.');
+                    if (is_null($decoded['contact_person_name']) || $decoded['contact_person_name'] == '') $fail($attribute . ' must contain "contact_person_name" properties.');
+                    if (is_null($decoded['contact_person_number']) || $decoded['contact_person_number'] == '') $fail($attribute . ' must contain "contact_person_number" properties.');
+                    if (is_null($decoded['address_label']) || $decoded['address_label'] == '') $fail($attribute . ' must contain "address_label" properties.');
                 },
             ] : '',
 
@@ -152,9 +152,17 @@ class PostBidController extends Controller
             $post_bid->save();
 
             //notification to provider
-            $provider = Provider::with('owner')->find($request['provider_id'])->first();
+            $provider = Provider::with('owner')->find($request['provider_id']);
+
             if ($provider) {
-                device_notification_for_bidding($provider->owner->fcm_token, translate('Your offer has been denied'), null, null, 'bidding', null, null, $request['provider_id']);
+                $data_info = [
+                    'user_name' => $request->user()->first_name . ' ' . $request->user()->last_name,
+                    'provider_name' => $provider?->company_name
+                ];
+                $title = get_push_notification_message('provider_bid_request_denied', 'provider_notification', $provider?->owner?->current_language_key);
+                if ($title && $provider?->owner?->fcm_token) {
+                    device_notification_for_bidding($provider->owner->fcm_token, $title, null, null, 'bidding', null, null, $request['provider_id'], $data_info);
+                }
             }
 
             return response()->json(response_formatter(DEFAULT_UPDATE_200, null), 200);
@@ -187,13 +195,6 @@ class PostBidController extends Controller
         //posts & post_bids table update
         if ($response['flag'] == 'success') {
             self::accept_post_bid_offer($post_bid->id, $response['booking_id']);
-
-            //notification to provider
-            $provider = Provider::with('owner')->find($request['provider_id'])->first();
-            if ($provider) {
-                device_notification_for_bidding($provider->owner->fcm_token, translate('Your offer has been accepted'), null, null, 'bidding', $response['booking_id'], $request['post_id'], $request['provider_id']);
-            }
-
         } else {
             return response()->json(response_formatter(DEFAULT_FAIL_200, null), 200);
         }

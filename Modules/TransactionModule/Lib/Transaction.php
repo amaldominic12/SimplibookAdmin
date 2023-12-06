@@ -1318,6 +1318,69 @@ if (!function_exists('withdraw_request_accept_transaction')) {
     }
 }
 
+if (!function_exists('withdraw_request_accept_for_adjust_transaction')) {
+    function withdraw_request_accept_for_adjust_transaction($provider_user_id, $withdrawal_amount) {
+        $admin_user_id = User::where('user_type', ADMIN_USER_TYPES[0])->first()->id;
+
+        DB::transaction(function () use ($admin_user_id, $withdrawal_amount, $provider_user_id) {
+
+            //Provider transactions
+            $account = Account::where('user_id', $provider_user_id)->first();
+            $account->account_receivable -= $withdrawal_amount;
+            $account->save();
+
+            $primary_transaction = Transaction::create([
+                'ref_trx_id' => null,
+                'booking_id' => null,
+                'trx_type' => TRX_TYPE['withdrawable_amount'],
+                'debit' => $withdrawal_amount,
+                'credit' => 0,
+                'balance' => $account->account_receivable,
+                'from_user_id' => $provider_user_id,
+                'to_user_id' => $provider_user_id,
+                'from_user_account' => ACCOUNT_STATES[3]['value'],
+                'to_user_account' => null
+            ]);
+
+            //Provider transactions
+            $account = Account::where('user_id', $provider_user_id)->first();
+            $account->total_withdrawn += $withdrawal_amount;
+            $account->save();
+
+            $primary_transaction = Transaction::create([
+                'ref_trx_id' => null,
+                'booking_id' => null,
+                'trx_type' => TRX_TYPE['received_amount'],
+                'debit' => 0,
+                'credit' => $withdrawal_amount,
+                'balance' => $account->total_withdrawn,
+                'from_user_id' => $provider_user_id,
+                'to_user_id' => $admin_user_id,
+                'from_user_account' => ACCOUNT_STATES[4]['value'],
+                'to_user_account' => null
+            ]);
+
+            //Admin transactions
+            $account = Account::where('user_id', $admin_user_id)->first();
+            $account->account_payable -= $withdrawal_amount;
+            $account->save();
+
+            Transaction::create([
+                'ref_trx_id' => $primary_transaction['id'],
+                'booking_id' => null,
+                'trx_type' => TRX_TYPE['paid_amount'],
+                'debit' => $withdrawal_amount,
+                'credit' => 0,
+                'balance' => $account->account_payable,
+                'from_user_id' => $provider_user_id,
+                'to_user_id' => $admin_user_id,
+                'from_user_account' => null,
+                'to_user_account' => ACCOUNT_STATES[2]['value']
+            ]);
+        });
+    }
+}
+
 if (!function_exists('withdraw_request_deny_transaction')) {
     function withdraw_request_deny_transaction($provider_user_id, $withdrawal_amount) {
 
@@ -1565,6 +1628,16 @@ if (!function_exists('add_fund_transactions')) {
                 $user->wallet_balance += $bonus;
                 $user->save();
 
+                //send notification
+                $user = User::find($customer_user_id);
+                $title =  with_currency_symbol($bonus) . ' ' . get_push_notification_message('add_fund_wallet_bonus', 'customer_notification', $user?->current_language_key);
+                $data_info = [
+                    'user_name' => $user?->first_name . ' '. $user->last_name
+                ];
+                if ($user->fcm_token && $title) {
+                    device_notification($user->fcm_token, $title, null, null, null, NOTIFICATION_TYPE['wallet'], null, $customer_user_id, $data_info);
+                }
+
                 Transaction::create([
                     'ref_trx_id' => null,
                     'booking_id' => null,
@@ -1654,7 +1727,10 @@ if (!function_exists('refund_transaction_for_canceled_booking')) {
                 'from_user_account' => null,
                 'to_user_account' => 'user_wallet'
             ]);
-            device_notification($booking?->customer?->fcm_token, with_currency_symbol($refund_amount) . ' ' . translate('has been refunded to your wallet'), null, null, $booking->id, 'wallet');
+            $title =  get_push_notification_message('refund', 'customer_notification', $booking?->customer?->current_language_key);
+            if($title && $booking?->customer?->fcm_token){
+                device_notification($booking?->customer?->fcm_token, with_currency_symbol($refund_amount) . ' ' . $title, null, null, $booking->id, 'booking');
+            }
         });
     }
 }

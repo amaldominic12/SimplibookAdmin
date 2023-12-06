@@ -68,6 +68,10 @@ class BookingController extends Controller
                 }
             }
 
+            if ($booking_status == 'completed' && $booking->payment_method == 'offline_payment' && !$booking->is_paid) {
+                return response()->json(response_formatter(UPDATE_FAILED_FOR_OFFLINE_PAYMENT_VERIFICATION_200), 200);
+            }
+
 
             $booking->booking_status = $request['booking_status'];
             $booking->evidence_photos = $evidence_photos;

@@ -10,7 +10,7 @@
                 <div class="about__wrapper-content  wow animate__fadeInUp">
                     <h3 class="section-title text-start ms-0">{{bs_data($settings,'about_us_title', 1)}}</h3>
                     <p>
-                        {!! bs_data($settings,'about_us', 1) !!}
+                        {!! bs_data_text($data_settings,'about_us', 1) !!}
                     </p>
                 </div>
                 <div class="about__wrapper-thumb ps-xl-4">

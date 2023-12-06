@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+@php
+    $site_direction = session()->get('landing_site_direction');
+@endphp
+<html lang="en" dir="{{$site_direction}}">
 
 <head>
     <meta charset="UTF-8"/>
@@ -12,6 +15,7 @@
     <meta property="og:title" content="{{bs_data($settings,'meta_title', 1,true)}}"/>
     <meta property="og:description" content="{{bs_data($settings,'meta_description', 1,true)}}">
     <!-- CSS -->
+    <link href="{{asset('public/assets/provider-module')}}/css/material-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{{asset('public/assets/landing')}}/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="{{asset('public/assets/landing')}}/css/line-awesome.min.css"/>
     <link rel="stylesheet" href="{{asset('public/assets/landing')}}/css/owl.min.css"/>
@@ -32,6 +36,22 @@
             --header-bg: #11202be6;
             --footer: #001f35;
             --footer-bottom: #111a21;
+        }
+
+        .navbar-nav .dropdown-menu.lang-menu {
+            position: absolute;
+        }
+
+        @media (max-width: 575px) {
+            .navbar-nav .dropdown-menu.lang-menu {
+                left: unset;
+                right: 0;
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+            .js-navbar-vertical-aside-toggle-invoker {
+                margin-right: 0 !important;
+            }
         }
     </style>
 </head>
@@ -94,6 +114,38 @@
                                 </a>
                             </li>
                         @endif
+                        <li class="nav-item max-sm-m-0">
+                            <div class="hs-unfold">
+                                <div>
+                                    @php( $local = session()->has('landing_local')?session('landing_local'):'en')
+                                    @php($lang = Modules\BusinessSettingsModule\Entities\BusinessSettings::where('key_name','system_language')->first())
+                                    @if ($lang)
+                                        <div class="topbar-text dropdown d-flex">
+                                            <a class="topbar-link dropdown-toggle d-flex align-items-center title-color landing-lang gap-1 text-uppercase" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                @foreach ($lang?->live_values as $data)
+                                                    @if($data['code']==$local)
+                                                       <span class="material-icons">language</span>
+                                                        {{$data['code']}}
+                                                    @endif
+                                                @endforeach
+                                            </a>
+                                            <ul class="dropdown-menu lang-menu">
+                                                @foreach($lang['live_values'] as $key =>$data)
+                                                    @if($data['status']==1)
+                                                        <li>
+                                                            <a class="dropdown-item py-1" href="{{route('lang',[$data['code']])}}">
+                                                                <span class="text-capitalize">{{$data['code']}}</span>
+                                                            </a>
+                                                        </li>
+                                                    @endif
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
+
+                                </div>
+                            </div>
+                        </li>
                     </ul>
                     <div class="nav-toggle d-lg-none ms-auto me-2 me-sm-4">
                         <span></span>
@@ -215,6 +267,7 @@
     <script src="{{asset('public/assets/landing')}}/js/viewport.jquery.js"></script>
     <script src="{{asset('public/assets/landing')}}/js/wow.min.js"></script>
     <script src="{{asset('public/assets/landing')}}/js/owl.min.js"></script>
+    <script src="{{asset('public/assets/landing')}}/js/bootstrap.min.js"></script>
 
     <script>
         (function ($) {
@@ -474,6 +527,7 @@
             });
         })(jQuery);
     </script>
+
 
 </body>
 </html>

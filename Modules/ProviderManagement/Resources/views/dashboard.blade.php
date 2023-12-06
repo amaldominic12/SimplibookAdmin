@@ -13,7 +13,7 @@
                 <div class="col-lg-3 col-sm-6">
                     <!-- Business Summary -->
                     <div class="business-summary business-summary-earning">
-                        <h2>{{$data[0]['top_cards']['total_earning']}}</h2>
+                        <h2>{{with_currency_symbol($data[0]['top_cards']['total_earning'])}}</h2>
                         <h3>{{translate('total_earning')}}</h3>
                         <img src="{{asset('public/assets/provider-module')}}/img/icons/total-earning.png"
                              class="absolute-img" alt="">
@@ -100,26 +100,30 @@
                     <div class="card recent-transactions h-100">
                         <div class="card-body">
                             <h4 class="mb-3 c1">{{translate('Recent_Transactions')}}</h4>
-                            <div class="d-flex align-items-center gap-3 mb-4">
-                                <img src="{{asset('public/assets/provider-module')}}/img/icons/arrow-up.png" alt="">
-                                <p class="opacity-75">{{$data[6]['this_month_trx_count']}} {{translate('transactions_this_month')}}</p>
-                            </div>
+                            @if(isset($data[6]['recent_transactions']) && count($data[6]['recent_transactions']) > 0)
+                                <div class="d-flex align-items-center gap-3 mb-4">
+                                    <img src="{{asset('public/assets/provider-module')}}/img/icons/arrow-up.png" alt="">
+                                    <p class="opacity-75">{{$data[6]['this_month_trx_count']}} {{translate('transactions_this_month')}}</p>
+                                </div>
+                            @endif
                             <div class="events">
-                                @foreach($data[6]['recent_transactions'] as $transaction)
-                                    <div class="event">
-                                        <div class="knob"></div>
-                                        <div class="title">
-                                            @if($transaction->debit>0)
-                                                <h5>{{with_currency_symbol($transaction->debit)}} {{translate('debited')}}</h5>
-                                            @else
-                                                <h5>{{with_currency_symbol($transaction->credit)}} {{translate('credited')}}</h5>
-                                            @endif
+                                @if($data[6]['this_month_trx_count'] > 0)
+                                    @foreach($data[6]['recent_transactions'] as $transaction)
+                                        <div class="event">
+                                            <div class="knob"></div>
+                                            <div class="title">
+                                                @if($transaction->debit>0)
+                                                    <h5>{{with_currency_symbol($transaction->debit)}} {{translate('debited')}}</h5>
+                                                @else
+                                                    <h5>{{with_currency_symbol($transaction->credit)}} {{translate('credited')}}</h5>
+                                                @endif
+                                            </div>
+                                            <div class="description">
+                                                <p>{{date('d M H:i a',strtotime($transaction->created_at))}}</p>
+                                            </div>
                                         </div>
-                                        <div class="description">
-                                            <p>{{date('d M H:i a',strtotime($transaction->created_at))}}</p>
-                                        </div>
-                                    </div>
-                                @endforeach
+                                    @endforeach
+                                @endif
                                 <div class="line"></div>
                             </div>
                         </div>

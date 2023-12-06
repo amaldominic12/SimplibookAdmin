@@ -26,6 +26,7 @@ Route::group(['prefix' => 'provider', 'as' => 'provider.', 'namespace' => 'Api\V
 
     Route::get('service-request', [ServiceRequestController::class, 'index']);
     Route::post('service-request', [ServiceRequestController::class, 'make_request']);
+    Route::post('service-request', [ServiceRequestController::class, 'make_request']);
 
     Route::resource('faq', 'FAQController', ['only' => ['index', 'show']]);
 });
@@ -48,6 +49,8 @@ Route::group(['prefix' => 'customer', 'as' => 'customer.', 'namespace' => 'Api\V
         Route::get('detail/{id}', [CustomerServiceController::class, 'show']);
         Route::get('review/{service_id}', [CustomerServiceController::class, 'review']);
         Route::get('sub-category/{sub_category_id}', [CustomerServiceController::class, 'services_by_subcategory']);
+
+        Route::post('area-availability', [CustomerServiceController::class, 'service_area_availability']);
 
         Route::group(['prefix' => 'request'], function () {
             Route::post('make', [CustomerServiceController::class, 'make_request'])->middleware('auth:api');

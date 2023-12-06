@@ -11,6 +11,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -66,7 +67,7 @@ class BookingController extends Controller
         }
     }
 
-    public function custom_index()
+    public function custom_index(): Factory|View|Application
     {
         return view('bookingmodule::admin.booking.custom-list');
     }
@@ -76,7 +77,7 @@ class BookingController extends Controller
      * @param Request $request
      * @return Renderable
      */
-    public function index(Request $request)
+    public function index(Request $request): Renderable
     {
         $request->validate([
             'booking_status' => 'in:' . implode(',', array_column(BOOKING_STATUSES, 'key')) . ',all',
@@ -191,7 +192,7 @@ class BookingController extends Controller
             ->latest()->paginate(pagination_limit())->appends($query_param);
 
         //for filter
-        $zones = $this->zone->select('id', 'name')->get();
+        $zones = $this->zone->withoutGlobalScope('translate')->select('id', 'name')->get();
         $categories = $this->category->select('id', 'parent_id', 'name')->where('position', 1)->get();
         $sub_categories = $this->category->select('id', 'parent_id', 'name')->where('position', 2)->get();
 
@@ -200,10 +201,9 @@ class BookingController extends Controller
 
     /**
      * Display a listing of the resource.
-     * @param Request $request
      * @return Renderable
      */
-    public function check_booking()
+    public function check_booking(): Renderable
     {
         $this->booking->where('is_checked', 0)->update(['is_checked' => 1]); //update the unseen bookings
     }
@@ -301,7 +301,7 @@ class BookingController extends Controller
             ->latest()->paginate(pagination_limit())->appends($query_param);
 
         //for filter
-        $zones = $this->zone->select('id', 'name')->get();
+        $zones = $this->zone->select('id', 'name')->withoutGlobalScope('translate')->get();
         $categories = $this->category->select('id', 'parent_id', 'name')->where('position', 1)->get();
         $sub_categories = $this->category->select('id', 'parent_id', 'name')->where('position', 2)->get();
 
@@ -312,7 +312,7 @@ class BookingController extends Controller
      * Display a listing of the resource.
      * @param $id
      * @param Request $request
-     * @return Renderable
+     * @return Renderable|RedirectResponse
      */
     public function details($id, Request $request): Renderable|RedirectResponse
     {
@@ -340,10 +340,32 @@ class BookingController extends Controller
             $services = Service::select('id', 'name')->where('category_id', $category->id)->where('sub_category_id', $sub_category->id)->get();
 
             $customer_address = $this->user_address->find($booking['service_address_id']);
-            $zones = Zone::ofStatus(1)->get();
+            $zones = Zone::ofStatus(1)->withoutGlobalScope('translate')->get();
+
+            $providers = $this->provider
+                ->when($request->has('search'), function ($query) use ($request) {
+                    $keys = explode(' ', $request['search']);
+                    return $query->where(function ($query) use ($keys) {
+                        foreach ($keys as $key) {
+                            $query->orWhere('company_phone', 'LIKE', '%' . $key . '%')
+                                ->orWhere('company_email', 'LIKE', '%' . $key . '%')
+                                ->orWhere('company_name', 'LIKE', '%' . $key . '%');
+                        }
+                    });
+                })
+                ->when(isset($booking->sub_category_id), function ($query) use($request, $booking) {
+                    $query->whereHas('subscribed_services', function ($query) use($request, $booking) {
+                        $query->where('sub_category_id', $booking->sub_category_id)->where('is_subscribed', 1);
+                    });
+                })
+                ->where('zone_id', $booking->zone_id)
+                ->withCount('bookings', 'reviews')
+                ->ofApproval(1)->ofStatus(1)->get();
+
+            $sort_by = 'default';
 
 
-            return view('bookingmodule::admin.booking.details', compact('booking', 'servicemen', 'web_page', 'customer_address', 'services', 'zones', 'category', 'sub_category'));
+            return view('bookingmodule::admin.booking.details', compact('booking', 'servicemen', 'web_page', 'customer_address', 'services', 'zones', 'category', 'sub_category', 'providers', 'sort_by'));
 
         } elseif ($request->web_page == 'status') {
             $booking = $this->booking->with(['detail.service', 'customer', 'provider', 'service_address', 'serviceman.user', 'service_address', 'status_histories.user'])->find($id);
@@ -398,15 +420,18 @@ class BookingController extends Controller
 
             if (isset($booking->provider_id)) {
                 $fcm_token = Provider::with('owner')->whereId($booking->provider_id)->first()->owner->fcm_token ?? null;
+                $language_key = $this->provider->with('owner')->whereId($booking->provider_id)->first()->owner?->current_language_key;
                 if (!is_null($fcm_token)) {
-                    device_notification($fcm_token, translate('New booking has arrived'), null, null, $booking->id, 'booking');
+                    $title =  get_push_notification_message('booking_accepted', 'provider_notification',$language_key);
+                    device_notification($fcm_token, $title, null, null, $booking->id, 'booking');
                 }
             } else {
                 $provider_ids = SubscribedService::where('sub_category_id', $booking->sub_category_id)->ofSubscription(1)->pluck('provider_id')->toArray();
                 $providers = Provider::with('owner')->whereIn('id', $provider_ids)->where('zone_id', $booking->zone_id)->get();
                 foreach ($providers as $provider) {
                     $fcm_token = $provider->owner->fcm_token ?? null;
-                    if (!is_null($fcm_token)) device_notification($fcm_token, translate('New booking has arrived'), null, null, $booking->id, 'booking');
+                    $title =  get_push_notification_message('booking_accepted', 'provider_notification',$provider?->owner?->current_language_key);
+                    if (!is_null($fcm_token)) device_notification($fcm_token, $title, null, null, $booking->id, 'booking');
                 }
             }
             return response()->json(DEFAULT_STATUS_UPDATE_200, 200);
@@ -825,6 +850,13 @@ class BookingController extends Controller
         $booking = $this->booking->find($request['booking_id']);
         $booking->is_paid = 1;
         $booking->save();
+
+        //customer notification
+        $user = $booking->customer;
+        $title =  get_push_notification_message('offline_payment_approved', 'customer_notification', $user?->current_language_key);
+        if ($user?->fcm_token && $title) {
+            device_notification($user?->fcm_token, $title, null, null, $booking->id, 'booking', null, $user->id);
+        }
 
         place_booking_transaction_for_digital_payment($booking);
 

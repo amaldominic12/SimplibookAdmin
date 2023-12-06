@@ -26,19 +26,73 @@
                                   id="service-add-form">
                                 @csrf
                                 @method('PUT')
+                                @php($language= Modules\BusinessSettingsModule\Entities\BusinessSettings::where('key_name','system_language')->first())
+                                @php($default_lang = str_replace('_', '-', app()->getLocale()))
+                                @if($language)
+                                    <ul class="nav nav--tabs border-color-primary mb-4">
+                                        <li class="nav-item">
+                                            <a class="nav-link lang_link active"
+                                               href="#"
+                                               id="default-link">{{translate('default')}}</a>
+                                        </li>
+                                        @foreach ($language?->live_values as $lang)
+                                            <li class="nav-item">
+                                                <a class="nav-link lang_link"
+                                                   href="#"
+                                                   id="{{ $lang['code'] }}-link">{{ get_language_name($lang['code']) }}</a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
                                 <div id="form-wizard">
                                     <h3>{{translate('service_information')}}</h3>
                                     <section>
                                         <div class="row">
                                             <div class="col-lg-5 mb-5 mb-lg-0">
-                                                <div class="mb-30">
-                                                    <div class="form-floating">
-                                                        <input type="text" class="form-control" name="name"
-                                                               placeholder="{{translate('service_name')}} *"
-                                                               required="" value="{{$service->name}}">
-                                                        <label>{{translate('service_name')}} *</label>
+                                                @if($language)
+                                                    <div class="form-floating mb-30 lang-form" id="default-form">
+                                                        <input type="text" name="name[]" class="form-control"
+                                                               placeholder="{{translate('service_name')}}" value="{{$service?->getRawOriginal('name')}}">
+                                                        <label>{{translate('service_name')}} ({{ translate('default') }}
+                                                            )</label>
                                                     </div>
-                                                </div>
+                                                    <input type="hidden" name="lang[]" value="default">
+                                                    @foreach ($language?->live_values as $lang)
+                                                            <?php
+                                                            if (count($service['translations'])) {
+                                                                $translate = [];
+                                                                foreach ($service['translations'] as $t) {
+                                                                    if ($t->locale == $lang['code'] && $t->key == "name") {
+                                                                        $translate[$lang['code']]['name'] = $t->value;
+                                                                    }
+                                                                }
+                                                            }
+                                                            ?>
+                                                        <div class="form-floating mb-30 d-none lang-form"
+                                                             id="{{$lang['code']}}-form">
+                                                            <input type="text" name="name[]" class="form-control"
+                                                                   placeholder="{{translate('service_name')}}"
+                                                                   {{$lang['status'] == '1' ? 'required':''}}
+                                                                   value="{{$translate[$lang['code']]['name']??''}}"
+                                                                   @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>
+                                                            <label>{{translate('service_name')}}
+                                                                ({{strtoupper($lang['code'])}})</label>
+                                                        </div>
+                                                        <input type="hidden" name="lang[]" value="{{$lang['code']}}">
+                                                    @endforeach
+                                                @else
+                                                    <div class="lang-form">
+                                                        <div class="mb-30">
+                                                            <div class="form-floating">
+                                                                <input type="text" class="form-control" name="name[]"
+                                                                       placeholder="{{translate('service_name')}} *"
+                                                                       required="" value="{{$service->name}}">
+                                                                <label>{{translate('service_name')}} *</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <input type="hidden" name="lang[]" value="default">
+                                                @endif
                                                 <div class="mb-30">
                                                     <select class="js-select theme-input-style w-100" name="category_id"
                                                             onchange="ajax_switch_category('{{url('/')}}/admin/category/ajax-childes/'+this.value)">
@@ -129,22 +183,86 @@
                                                         jpeg, gif Image Size - maximum size 2 MB Image Ratio - 3:1')}}</p>
                                                 </div>
                                             </div>
-                                            <div class="col-lg-12 mt-5">
-                                                <div class="mb-30">
-                                                    <div class="form-floating">
-                                                        <textarea type="text" class="form-control"
-                                                                  name="short_description">{{$service->short_description}}</textarea>
-                                                        <label>{{translate('short_description')}} *</label>
+                                            @if($language)
+                                                <div class="lang-form2" id="default-form2">
+                                                    <div class="col-lg-12 mt-5">
+                                                        <div class="mb-30">
+                                                            <div class="form-floating">
+                                                                <textarea type="text" class="form-control"
+                                                                          name="short_description[]">{{$service?->getRawOriginal('short_description')}}</textarea>
+                                                                <label>{{translate('short_description')}} ({{translate('default')}}) *</label>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-12 mt-4 mt-md-5">
-                                                <label for="editor" class="mb-2">{{translate('long_Description')}} <span class="text-danger">*</span></label>
-                                                <section id="editor" class="dark-support">
+                                                    <div class="col-12 mt-4 mt-md-5">
+                                                        <label for="editor" class="mb-2">{{translate('long_Description')}} ({{translate('default')}})
+                                                            <span class="text-danger">*</span></label>
+                                                        <section id="editor" class="dark-support">
                                                     <textarea class="ckeditor"
-                                                              name="description">{{$service->description}}</textarea>
-                                                </section>
-                                            </div>
+                                                              name="description[]">{!! $service?->getRawOriginal('description') !!}</textarea>
+                                                        </section>
+                                                    </div>
+                                                    {{--                                                    <input type="hidden" name="lang[]" value="default">--}}
+                                                </div>
+                                                @foreach ($language?->live_values as $lang)
+                                                        <?php
+                                                        if (count($service['translations'])) {
+                                                            $translate = [];
+                                                            foreach ($service['translations'] as $t) {
+                                                                if ($t->locale == $lang['code'] && $t->key == "short_description") {
+                                                                    $translate[$lang['code']]['short_description'] = $t->value;
+                                                                }
+
+                                                                if ($t->locale == $lang['code'] && $t->key == "description") {
+                                                                    $translate[$lang['code']]['description'] = $t->value;
+                                                                }
+                                                            }
+                                                        }
+                                                        ?>
+                                                    <div class="d-none lang-form2" id="{{$lang['code']}}-form2">
+                                                        <div class="col-lg-12 mt-5">
+                                                            <div class="mb-30">
+                                                                <div class="form-floating">
+                                                        <textarea type="text" class="form-control"
+                                                                  name="short_description[]" {{$lang['status'] == '1' ? 'required':''}}
+                                                                  @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>{{$translate[$lang['code']]['short_description']??''}}</textarea>
+                                                                    <label>{{translate('short_description')}} ({{strtoupper($lang['code'])}}) *</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-12 mt-4 mt-md-5">
+                                                            <label for="editor" class="mb-2">{{translate('long_Description')}} ({{strtoupper($lang['code'])}})
+                                                                <span class="text-danger">*</span></label>
+                                                            <section id="editor" class="dark-support">
+                                                            <textarea class="ckeditor"
+                                                                      name="description[]" {{$lang['status'] == '1' ? 'required':''}}
+                                                                      @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>{!! $translate[$lang['code']]['description']??'' !!}</textarea>
+                                                            </section>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            @else
+                                                <div class="normal-form">
+                                                    <div class="col-lg-12 mt-5">
+                                                        <div class="mb-30">
+                                                            <div class="form-floating">
+                                                        <textarea type="text" class="form-control"
+                                                                  name="short_description[]">{{old('short_description')}}</textarea>
+                                                                <label>{{translate('short_description')}} *</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 mt-4 mt-md-5">
+                                                        <label for="editor" class="mb-2">{{translate('long_Description')}}
+                                                            <span class="text-danger">*</span></label>
+                                                        <section id="editor" class="dark-support">
+                                                    <textarea class="ckeditor"
+                                                              name="description[]">{{old('description')}}</textarea>
+                                                        </section>
+                                                    </div>
+                                                    {{--                                                    <input type="hidden" name="lang[]" value="default">--}}
+                                                </div>
+                                            @endif
                                         </div>
                                     </section>
 
@@ -333,6 +451,29 @@
             $('textarea.ckeditor').each(function () {
                 CKEDITOR.replace($(this).attr('id'));
             });
+        });
+    </script>
+
+    <script>
+
+        $(".lang_link").on('click', function (e) {
+            e.preventDefault();
+            $(".lang_link").removeClass('active');
+            $(".lang-form").addClass('d-none');
+            $(".lang-form2").addClass('d-none');
+            $(this).addClass('active');
+
+            let form_id = this.id;
+            let lang = form_id.substring(0, form_id.length - 5);
+            console.log(lang);
+            $("#" + lang + "-form").removeClass('d-none');
+            $("#" + lang + "-form2").removeClass('d-none');
+
+            if (lang == '{{$default_lang}}') {
+                $(".from_part_2").removeClass('d-none');
+            } else {
+                $(".from_part_2").addClass('d-none');
+            }
         });
     </script>
 @endpush

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Modules\BusinessSettingsModule\Entities\BusinessSettings;
 use Modules\ProviderManagement\Entities\Provider;
 use Modules\TransactionModule\Entities\Account;
+use Modules\UserManagement\Entities\User;
 
 class AccountController extends Controller
 {
@@ -32,6 +33,8 @@ class AccountController extends Controller
     public function overview(Request $request): JsonResponse
     {
         $provider = $this->provider->with('owner.account')->where('user_id', $request->user()->id)->first();
+        $limit_status = provider_warning_amount_calculate($provider->owner->account->account_payable,$provider->owner->account->account_receivable);
+        $provider['cash_limit_status'] = $limit_status == false ? 'available' : $limit_status;
         $booking_overview = DB::table('bookings')->where('provider_id', $request->user()->provider->id)
             ->select('booking_status', DB::raw('count(*) as total'))
             ->groupBy('booking_status')
@@ -84,7 +87,7 @@ class AccountController extends Controller
             'confirm_password' => 'same:password',
             'account_first_name' => 'required',
             'account_last_name' => 'required',
-            'account_phone' => 'required|unique:users,phone,' . $provider->user_id . ',id',
+            'account_phone' => 'required',
 
             'company_name' => 'required',
             'company_phone' => 'required|unique:providers,company_phone,' . $provider->id . ',id',
@@ -94,6 +97,11 @@ class AccountController extends Controller
 
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        }
+
+        //email & phone check
+        if (User::where('phone', $request['account_phone'])->where('id', '!=', $provider->user_id)->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"account_phone","message"=>translate('Phone already taken')]]), 400);
         }
 
         $provider->company_name = $request->company_name;

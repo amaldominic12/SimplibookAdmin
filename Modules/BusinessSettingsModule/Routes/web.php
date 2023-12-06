@@ -13,6 +13,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\BusinessSettingsModule\Http\Controllers\Web\Admin\BusinessInformationController;
+use Modules\BusinessSettingsModule\Http\Controllers\Web\Admin\LanguageController;
 use Modules\BusinessSettingsModule\Http\Controllers\Web\Provider\BusinessInformationController as ProviderBusinessInformationController;
 use Modules\BusinessSettingsModule\Http\Controllers\Web\Admin\ConfigurationController;
 use Modules\CustomerModule\Http\Controllers\Web\Admin\CustomerController;
@@ -23,6 +24,9 @@ Route::group(['namespace' => 'Api\V1\Admin'], function () {
 
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Web\Admin', 'middleware' => ['admin','mpc:system_management']], function () {
+
+    Route::get('lang/{locale}', 'LanguageController@lang')->name('lang');
+
     Route::group(['prefix' => 'business-settings', 'as' => 'business-settings.'], function () {
         Route::get('get-business-information', 'BusinessInformationController@business_information_get')->name('get-business-information');
         Route::put('set-business-information', 'BusinessInformationController@business_information_set')->name('set-business-information');
@@ -59,7 +63,26 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Web\Admin',
 
         Route::get('get-landing-information', 'LandingPageController@landing_information_get')->name('get-landing-information');
         Route::put('set-landing-information', 'LandingPageController@landing_information_set')->name('set-landing-information');
+        Route::put('set-landing-feature', 'LandingPageController@landing_feature_set')->name('set-landing-feature');
+        Route::put('set-landing-speciality', 'LandingPageController@landing_speciality_set')->name('set-landing-speciality');
+        Route::put('set-landing-testimonial', 'LandingPageController@landing_testimonial_set')->name('set-landing-testimonial');
         Route::delete('delete-landing-information/{page}/{id}', 'LandingPageController@landing_information_delete')->name('delete-landing-information');
+        Route::delete('delete-landing-feature/{id}', 'LandingPageController@landing_feature_delete')->name('delete-landing-feature');
+        Route::delete('delete-landing-speciality/{id}', 'LandingPageController@landing_speciality_delete')->name('delete-landing-speciality');
+        Route::delete('delete-landing-testimonial/{id}', 'LandingPageController@landing_testimonial_delete')->name('delete-landing-testimonial');
+    });
+
+    Route::group(['prefix' => 'language', 'as' => 'language.'], function () {
+        Route::post('store', [LanguageController::class, 'store'])->name('store');
+        Route::get('update-status', [LanguageController::class, 'update_status'])->name('update-status');
+        Route::get('update-default-status', [LanguageController::class, 'update_default_status'])->name('update-default-status');
+        Route::post('update', [LanguageController::class, 'update'])->name('update');
+        Route::get('translate/{lang}', [LanguageController::class, 'translate'])->name('translate');
+        Route::post('translate-submit/{lang}', [LanguageController::class, 'translate_submit'])->name('translate-submit');
+        Route::post('remove-key/{lang}', [LanguageController::class, 'translate_key_remove'])->name('remove-key');
+        Route::delete('delete/{lang}', [LanguageController::class, 'delete'])->name('delete');
+        Route::any('auto-translate/{lang}', [LanguageController::class, 'auto_translate'])->name('auto-translate');
+
     });
 
     Route::group(['prefix' => 'configuration', 'as' => 'configuration.'], function () {
@@ -75,6 +98,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Web\Admin',
 
         Route::get('get-app-settings', 'ConfigurationController@app_settings_config_get')->name('get-app-settings');
         Route::put('set-app-settings', 'ConfigurationController@app_settings_config_set')->name('set-app-settings');
+
+        Route::get('language-setup', 'ConfigurationController@language_setup')->name('language_setup');
+        Route::put('language-setup', 'ConfigurationController@update_language_setup')->name('update_language_setup');
 
         Route::put('social-login-config-set', [ConfigurationController::class, 'social_login_config_set'])->name('social-login-config-set');
     });

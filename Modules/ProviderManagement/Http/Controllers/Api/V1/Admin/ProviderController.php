@@ -200,8 +200,8 @@ class ProviderController extends Controller
 
             'account_first_name' => 'required',
             'account_last_name' => 'required',
-            'account_email' => 'required|email|unique:users,email',
-            'account_phone' => 'required|unique:users,phone',
+            'account_email' => 'required|email',
+            'account_phone' => 'required',
             'password' => 'required',
             'confirm_password' => 'required|same:password',
 
@@ -222,6 +222,14 @@ class ProviderController extends Controller
 
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        }
+
+        //email & phone check
+        if (User::where('email', $request['account_email'])->first()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"account_email","message"=>translate('Email already taken')]]), 400);
+        }
+        if (User::where('phone', $request['account_phone'])->first()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"account_phone","message"=>translate('Phone already taken')]]), 400);
         }
 
         $identity_images = [];

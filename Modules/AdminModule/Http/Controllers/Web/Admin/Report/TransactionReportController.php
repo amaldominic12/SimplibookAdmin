@@ -66,6 +66,7 @@ class TransactionReportController extends Controller
             'date_range' => 'in:all_time, this_week, last_week, this_month, last_month, last_15_days, this_year, last_year, last_6_month, this_year_1st_quarter, this_year_2nd_quarter, this_year_3rd_quarter, this_year_4th_quarter, custom_date',
             'from' => $request['date_range'] == 'custom_date' ? 'required' : '',
             'to' => $request['date_range'] == 'custom_date' ? 'required' : '',
+            'filter_by' => 'in:collect_cash,payment,withdraw,commission,all',
 
             'transaction_type' => 'in:all,debit,credit'
         ]);
@@ -88,6 +89,9 @@ class TransactionReportController extends Controller
         }
         if ($request->has('date_range')) {
             $query_params['date_range'] = $request['date_range'];
+        }
+        if ($request->has('filter_by')) {
+            $query_params['filter_by'] = $request['filter_by'];
         }
         if ($request->has('date_range') && $request['date_range'] == 'custom_date') {
             $query_params['from'] = $request['from'];
@@ -204,6 +208,9 @@ class TransactionReportController extends Controller
             ->when($request->has('date_range') && $request['date_range'] == 'custom_date', function ($query) use($request) {
                 $query->whereBetween('created_at', [Carbon::parse($request['from'])->startOfDay(), Carbon::parse($request['to'])->endOfDay()]);
             })
+            ->when($request->has('filter_by') && $request['filter_by'] != 'all', function ($query) use($request) {
+                $query->where('trx_type', $request['filter_by']);
+            })
             ->when($request->has('date_range') && $request['date_range'] != 'custom_date', function ($query) use($request) {
                 //DATE RANGE
                 if($request['date_range'] == 'this_week') {
@@ -288,6 +295,7 @@ class TransactionReportController extends Controller
             'date_range' => 'in:all_time, this_week, last_week, this_month, last_month, last_15_days, this_year, last_year, last_6_month, this_year_1st_quarter, this_year_2nd_quarter, this_year_3rd_quarter, this_year_4th_quarter, custom_date',
             'from' => $request['date_range'] == 'custom_date' ? 'required' : '',
             'to' => $request['date_range'] == 'custom_date' ? 'required' : '',
+            'filter_by' => 'in:collect_cash,payment,withdraw,commission,all',
 
             'transaction_type' => 'in:all,debit,credit'
         ]);
@@ -364,6 +372,9 @@ class TransactionReportController extends Controller
                     //this year 4th quarter
                     $query->whereBetween('created_at', [Carbon::now()->month(10)->startOfQuarter(), Carbon::now()->month(10)->endOfQuarter()]);
                 }
+            })
+            ->when($request->has('filter_by') && $request['filter_by'] != 'all', function ($query) use($request) {
+                $query->where('trx_type', $request['filter_by']);
             })
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search']);

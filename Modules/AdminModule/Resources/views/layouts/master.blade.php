@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+@php
+    $site_direction = session()->get('site_direction');
+@endphp
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{$site_direction}}">
 
 <head>
     <!-- Page Title -->
@@ -51,7 +54,6 @@
 <body>
 <script>
     localStorage.theme && document.querySelector('body').setAttribute("theme", localStorage.theme);
-    localStorage.dir && document.querySelector('html').setAttribute("dir", localStorage.dir);
 </script>
 
 <!-- Offcanval Overlay -->

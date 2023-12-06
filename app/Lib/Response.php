@@ -95,6 +95,16 @@ const DEFAULT_STORE_200 = [
     'message' => 'successfully added'
 ];
 
+const DEFAULT_CART_STORE_200 = [
+    'response_code' => 'default_cart_store_200',
+    'message' => 'Successfully added to the cart'
+];
+
+const DEFAULT_CART_ALREADY_ADDED_200 = [
+    'response_code' => 'default_cart_already_added_store_200',
+    'message' => 'Already Added'
+];
+
 const DEFAULT_UPDATE_200 = [
     'response_code' => 'default_update_200',
     'message' => 'successfully updated'
@@ -103,6 +113,16 @@ const DEFAULT_UPDATE_200 = [
 const DEFAULT_STATUS_UPDATE_200 = [
     'response_code' => 'default_status_update_200',
     'message' => 'successfully status updated'
+];
+
+const DEFAULT_SUSPEND_UPDATE_200 = [
+    'response_code' => 'default_suspend_update_200',
+    'message' => 'successfully suspend status updated'
+];
+
+const DEFAULT_SUSPEND_200 = [
+    'response_code' => 'default_suspend_update_200',
+    'message' => 'Your account has been supended'
 ];
 
 const TOO_MANY_ATTEMPT_403 = [
@@ -337,6 +357,13 @@ const MINIMUM_BOOKING_AMOUNT_200 = [
     'message' => 'Booking amount must be greater than minimum booking amount'
 ];
 
+const PROVIDER_EXCEED_CASH_IN_HAND = [
+    'response_code' => 'provider_exceed_cash_in_hand_200',
+    'message' => 'You exceeded the cash in hand limit'
+];
+
+
+
 const UPDATE_FAILED_FOR_OFFLINE_PAYMENT_VERIFICATION_200 = [
     'response_code' => 'minimum_booking_amount_200',
     'message' => 'Admin must verify the offline payment before completing the booking'
@@ -361,4 +388,9 @@ const NOTIFICATION_SEND_SUCCESSFULLY_200 = [
 const NOTIFICATION_SEND_FAILED_200 = [
     'response_code' => 'notification_send_failed_200',
     'message' => 'Notification has been failed to send'
+];
+
+const ADJUST_AMOUNT_SUCCESS_200 = [
+    'response_code' => 'adjusted_successfully_200',
+    'message' => 'Amount adjusted successfully'
 ];

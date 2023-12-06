@@ -48,7 +48,8 @@ class OfflinePaymentController extends Controller
         $status = null;
         $search = $request['search'];
         $type = 'offline_payment';
-        return View('paymentmodule::admin.offline-payments.list', compact('withdrawal_methods', 'status', 'search','type'));
+        $web_page = 'payment_config';
+        return View('paymentmodule::admin.offline-payments.list', compact('withdrawal_methods', 'status', 'search','type', 'web_page'));
     }
 
     /**
@@ -58,7 +59,8 @@ class OfflinePaymentController extends Controller
     public function method_create(): Renderable
     {
         $type = 'offline_payment';
-        return View('paymentmodule::admin.offline-payments.create', compact('type'));
+        $web_page = 'payment_config';
+        return View('paymentmodule::admin.offline-payments.create', compact('type', 'web_page'));
     }
 
     /**
@@ -121,7 +123,8 @@ class OfflinePaymentController extends Controller
     {
         $withdrawal_method = $this->offline_payment->find($id);
         $type = 'offline_payment';
-        return View('paymentmodule::admin.offline-payments.edit', compact('withdrawal_method', 'type'));
+        $web_page = 'payment_config';
+        return View('paymentmodule::admin.offline-payments.edit', compact('withdrawal_method', 'type', 'web_page'));
     }
 
     /**

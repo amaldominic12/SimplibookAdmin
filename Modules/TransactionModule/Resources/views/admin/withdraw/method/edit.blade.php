@@ -20,18 +20,68 @@
                         </button>
                     </div>
 
+                    @php($language= Modules\BusinessSettingsModule\Entities\BusinessSettings::where('key_name','system_language')->first())
+                    @php($default_lang = str_replace('_', '-', app()->getLocale()))
+                    @if($language)
+                        <ul class="nav nav--tabs border-color-primary mb-4">
+                            <li class="nav-item">
+                                <a class="nav-link lang_link active"
+                                   href="#"
+                                   id="default-link">{{translate('default')}}</a>
+                            </li>
+                            @foreach ($language?->live_values as $lang)
+                                <li class="nav-item">
+                                    <a class="nav-link lang_link"
+                                       href="#"
+                                       id="{{ $lang['code'] }}-link">{{ get_language_name($lang['code']) }}</a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+
                     <div class="card">
                         <form action="{{route('admin.withdraw.method.update')}}" method="POST">
                             @csrf
                             @method('PUT')
                             <input type="hidden" value="{{$withdrawal_method['id']}}" name="id">
                             <div class=" p-30">
-                                <div class="form-floating card mb-30">
-                                    <input type="text" class="form-control" name="method_name" id="method_name"
-                                           placeholder="Select method name"
-                                           value="{{$withdrawal_method['method_name']}}" required>
-                                    <label>{{translate('method_name')}} *</label>
-                                </div>
+                                @if ($language)
+                                    <div class="form-floating mb-30 lang-form" id="default-form">
+                                        <input type="text" name="method_name[]" class="form-control"
+                                               placeholder="{{translate('method_name')}}"
+                                               value="{{$withdrawal_method?->getRawOriginal('method_name')}}">
+                                        <label>{{translate('method_name')}} ({{ translate('default') }})</label>
+                                    </div>
+                                    <input type="hidden" name="lang[]" value="default">
+                                    @foreach ($language?->live_values as $lang)
+                                            <?php
+                                            if (count($withdrawal_method['translations'])) {
+                                                $translate = [];
+                                                foreach ($withdrawal_method['translations'] as $t) {
+                                                    if ($t->locale == $lang['code'] && $t->key == "method_name") {
+                                                        $translate[$lang['code']]['method_name'] = $t->value;
+                                                    }
+                                                }
+                                            }
+                                            ?>
+                                        <div class="form-floating mb-30 d-none lang-form" id="{{$lang['code']}}-form">
+                                            <input type="text" name="method_name[]" class="form-control"
+                                                   placeholder="{{translate('method_name')}}"
+                                                   {{$lang['status'] == '1' ? 'required':''}}
+                                                   value="{{$translate[$lang['code']]['method_name']??''}}"
+                                                   @if($lang['status'] == '1') oninvalid="document.getElementById('{{$lang['code']}}-link').click()" @endif>
+                                            <label>{{translate('method_name')}} ({{strtoupper($lang['code'])}})</label>
+                                        </div>
+                                        <input type="hidden" name="lang[]" value="{{$lang['code']}}">
+                                    @endforeach
+                                @else
+                                    <div class="form-floating mb-30">
+                                        <input type="text" name="method_name[]" class="form-control"
+                                               placeholder="{{translate('method_name')}}" value="{{$withdrawal_method['method_name']}}" required>
+                                        <label>{{translate('method_name')}}</label>
+                                    </div>
+                                    <input type="hidden" name="lang[]" value="default">
+                                @endif
 
                                 @if($withdrawal_method['method_fields'][0])
                                 @php($field = $withdrawal_method['method_fields'][0])
@@ -243,6 +293,21 @@
 
                 counter = 1;
             })
+        });
+    </script>
+
+    <script>
+
+        $(".lang_link").on('click', function (e) {
+            e.preventDefault();
+            $(".lang_link").removeClass('active');
+            $(".lang-form").addClass('d-none');
+            $(this).addClass('active');
+
+            let form_id = this.id;
+            let lang = form_id.substring(0, form_id.length - 5);
+            console.log(lang);
+            $("#" + lang + "-form").removeClass('d-none');
         });
     </script>
 

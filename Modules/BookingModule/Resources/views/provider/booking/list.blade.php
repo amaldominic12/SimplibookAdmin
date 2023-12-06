@@ -8,6 +8,21 @@
 
 @section('content')
     <!-- Filter Aside -->
+    @if(business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values && Request()->user()->provider->is_suspended == 1)
+        <div class="alert alert-danger">
+            <div class="media gap-3 align-items-center">
+                <div class="alert-close-btn">
+                    <span class="material-symbols-outlined">close</span>
+                </div>
+                <div class="media-body">
+                    <h5 class="text-capitalize">{{translate('Attention Please')}}!</h5>
+                    <p class="text-dark fs-12">
+                        {{translate('Your limit to hold cash is exceeded. Your account has been suspended until you pay the due. You will not receive any new booking requests from now')}}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
     <div class="filter-aside">
         <div class="filter-aside__header d-flex justify-content-between align-items-center">
             <h3 class="filter-aside__title">{{translate('Filter_your_order')}}</h3>

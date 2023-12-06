@@ -5,6 +5,8 @@ namespace Modules\ProviderManagement\Http\Controllers\Api\V1\Provider;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Modules\UserManagement\Entities\User;
 use Stevebauman\Location\Facades\Location;
@@ -50,9 +52,28 @@ class ConfigController extends Controller
     public function config(Request $request): JsonResponse
     {
         $location = Location::get($request->ip());
+
+        //payment gateways
+        $is_published = 0;
+        try {
+            $full_data = include('Modules/Gateways/Addon/info.php');
+            $is_published = $full_data['is_published'] == 1 ? 1 : 0;
+        } catch (\Exception $exception) {}
+
+        $payment_gateways = collect($this->getPaymentMethods())
+            ->filter(function ($query) use ($is_published) {
+                if (!$is_published) {
+                    return in_array($query['gateway'], array_column(PAYMENT_METHODS, 'key'));
+                } else return $query;
+            })->map(function ($query) {
+                $query['label'] = ucwords(str_replace('_', ' ', $query['gateway']));
+                return $query;
+            })->values();
+
         return response()->json(response_formatter(DEFAULT_200, [
             'provider_can_cancel_booking' => (int)((business_config('provider_can_cancel_booking', 'provider_config'))->live_values ?? null),
             'provider_self_registration' => (int)((business_config('provider_self_registration', 'provider_config'))->live_values ?? null),
+            'provider_self_delete' => (int)((business_config('provider_self_delete', 'provider_config'))->live_values ?? null),
             'provider_can_edit_booking' => (int)((business_config('provider_can_edit_booking', 'provider_config'))->live_values ?? null),
             'currency_symbol_position' => (business_config('currency_symbol_position', 'business_information'))->live_values ?? null,
             'business_name' => (business_config('business_name', 'business_information'))->live_values ?? null,
@@ -64,6 +85,7 @@ class ConfigController extends Controller
             'base_url' => url('/') . 'api/v1/',
             'currency_decimal_point' => (business_config('currency_decimal_point', 'business_information'))->live_values ?? null,
             'currency_code' => (business_config('currency_code', 'business_information'))->live_values ?? null,
+            'currency_symbol' => currency_symbol() ?? '',
             'about_us' => route('about-us'),
             'privacy_policy' => route('privacy-policy'),
             'terms_and_conditions' => (business_config('terms_and_conditions', 'pages_setup'))->is_active ? route('terms-and-conditions') : "",
@@ -73,19 +95,11 @@ class ConfigController extends Controller
                 'lat' => $location->latitude ?? null,
                 'lon' => $location->longitude ?? null
             ]],
-            'user_location_info' => $location,
-            'app_url_android' => '',
-            'app_url_ios' => '',
-            //'sms_verification' => (business_config('sms_verification', 'service_setup'))->live_values ?? null,
-            //'email_verification' => (business_config('email_verification', 'service_setup'))->live_values ?? null,
-            'map_api_key' => $this->google_map,
             'image_base_url' => asset('storage/app/public'),
             'pagination_limit' => (int)pagination_limit(),
-            'languages' => LANGUAGES,
-            'currencies' => CURRENCIES,
-            'countries' => COUNTRIES,
-            'time_zones' => DateTimeZone::listIdentifiers(),
-            'recaptcha' => (business_config('recaptcha', 'third_party'))->live_values ?? null,
+            'time_format' => (business_config('time_format', 'business_information'))->live_values ?? '24h',
+            'max_cash_in_hand_limit_provider' => (business_config('max_cash_in_hand_limit_provider', 'provider_config'))->live_values ?? 0,
+            'suspend_on_exceed_cash_limit_provider' => (business_config('suspend_on_exceed_cash_limit_provider', 'provider_config'))->live_values ?? 0,
             'default_commission' => (business_config('default_commission', 'business_information'))->live_values,
             'admin_details' => User::select('id', 'first_name', 'last_name', 'profile_image')->where('user_type', ADMIN_USER_TYPES[0])->first(),
             'footer_text' => (business_config('footer_text', 'business_information'))->live_values ?? null,
@@ -104,6 +118,32 @@ class ConfigController extends Controller
             'booking_additional_charge' => (int)(business_config('booking_additional_charge', 'booking_setup'))?->live_values ?? null,
             'additional_charge_label_name' => (string)(business_config('additional_charge_label_name', 'booking_setup'))?->live_values ?? null,
             'additional_charge_fee_amount' => (int)(business_config('additional_charge_fee_amount', 'booking_setup'))?->live_values ?? null,
+            'payment_gateways' => $payment_gateways,
         ]), 200);
+    }
+
+    private function getPaymentMethods(): array
+    {
+        // Check if the addon_settings table exists
+        if (!Schema::hasTable('addon_settings')) {
+            return [];
+        }
+
+        $methods = DB::table('addon_settings')->where('settings_type', 'payment_config')->get();
+        $env = env('APP_ENV') == 'live' ? 'live' : 'test';
+        $credentials = $env . '_values';
+
+        $data = [];
+        foreach ($methods as $method) {
+            $credentialsData = json_decode($method->$credentials);
+            $additional_data = json_decode($method->additional_data);
+            if ($credentialsData->status == 1) {
+                $data[] = [
+                    'gateway' => $method->key_name,
+                    'gateway_image' => $additional_data?->gateway_image
+                ];
+            }
+        }
+        return $data;
     }
 }

@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\LandingController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Modules\BusinessSettingsModule\Entities\BusinessSettings;
+use Modules\BusinessSettingsModule\Entities\DataSetting;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('lang/{locale}', [LandingController::class, 'lang'])->name('lang');
 Route::get('/', [LandingController::class, 'home'])->name('home');
 Route::get('page/about-us', [LandingController::class, 'about_us'])->name('page.about-us');
 Route::get('page/privacy-policy', [LandingController::class, 'privacy_policy'])->name('page.privacy-policy');
@@ -25,3 +29,4 @@ Route::get('page/refund-policy', [LandingController::class, 'refund_policy'])->n
 Route::fallback(function () {
     return redirect('admin/auth/login');
 });
+

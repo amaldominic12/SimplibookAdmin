@@ -91,6 +91,7 @@
                                                     <th>{{translate('Transaction_Date')}}</th>
                                                     <th>{{translate('Transaction_From')}}</th>
                                                     <th>{{translate('Transaction_To')}}</th>
+                                                    <th>{{translate('Transaction Type')}}</th>
                                                     <th>{{translate('Debit')}}</th>
                                                     <th>{{translate('Credit')}}</th>
                                                     <th>{{translate('Balance')}}</th>
@@ -119,6 +120,7 @@
                                                             <small class="opacity-75">{{translate($transaction->to_user_account)}}</small>
                                                         @endif
                                                     </td>
+                                                    <td>{{translate($transaction->trx_type)}}</td>
                                                     <td>{{with_currency_symbol($transaction->debit)}}</td>
                                                     <td>{{with_currency_symbol($transaction->credit)}}</td>
                                                     <td>{{with_currency_symbol($transaction->balance)}}</td>

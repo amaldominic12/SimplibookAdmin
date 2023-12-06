@@ -12,7 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 use Modules\CategoryManagement\Entities\Category;
+use Modules\ProviderManagement\Entities\Provider;
 use Modules\ServiceManagement\Entities\ServiceRequest;
+use Modules\UserManagement\Entities\User;
 
 class ServiceRequestController extends Controller
 {
@@ -55,6 +57,26 @@ class ServiceRequestController extends Controller
         $service_request->status = $request['review_status'] == 1 ? 'approved' : 'denied';
         $service_request->admin_feedback = $request['admin_feedback'];
         $service_request->save();
+
+        if ($service_request->user && $service_request->user->provider) {
+            $user_info = $service_request?->user?->provider;
+            $language_key = $user_info->owner?->current_language_key;
+            if (!is_null($user_info->owner?->fcm_token)) {
+                if ($service_request->status == 'approved') {
+                    $data_info = [
+                        'provider_name' => $user_info?->company_name
+                    ];
+                    $title = get_push_notification_message('service_request_approve', 'provider_notification', $language_key);
+                    device_notification($user_info->owner?->fcm_token, $title, null, null, null, 'service_request', null,null, $data_info);
+                } elseif ($service_request->status == 'denied') {
+                    $data_info = [
+                        'provider_name' => $user_info?->company_name
+                    ];
+                    $title = get_push_notification_message('service_request_deny', 'provider_notification', $language_key);
+                    device_notification($user_info?->owner?->fcm_token, $title, null, null, null, 'service_request', null, null, $data_info);
+                }
+            }
+        }
 
         Toastr::success(DEFAULT_STORE_200['message']);
         return back();

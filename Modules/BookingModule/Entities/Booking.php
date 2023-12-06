@@ -157,20 +157,58 @@ class Booking extends Model
             if ($model->isDirty('booking_status')) {
                 $key = null;
                 if ($model->booking_status == 'pending') {
-                    $key = 'booking_place';
+                    $notifications[] = [
+                        'key' => 'booking_place',
+                        'settings_type' => 'customer_notification'
+                    ];
                 } elseif ($model->booking_status == 'ongoing') {
-                    $key = 'booking_ongoing';
+                    $notifications[] = [
+                        'key' => 'booking_ongoing',
+                        'settings_type' => 'customer_notification'
+                    ];
+                    $notifications[] = [
+                        'key' => 'ongoing_booking',
+                        'settings_type' => 'provider_notification'
+                    ];
+                    $notifications[] = [
+                        'key' => 'ongoing_booking',
+                        'settings_type' => 'serviceman_notification'
+                    ];
                 } elseif ($model->booking_status == 'accepted') {
-                    $key = 'booking_accepted';
+                    $notifications[] = [
+                        'key' => 'booking_accepted',
+                        'settings_type' => 'customer_notification'
+                    ];
+                    $notifications[] = [
+                        'key' => 'booking_accepted',
+                        'settings_type' => 'provider_notification'
+                    ];
                 } elseif ($model->booking_status == 'completed') {
+                    $notifications[] = [
+                        'key' => 'booking_complete',
+                        'settings_type' => 'customer_notification'
+                    ];
+                    $notifications[] = [
+                        'key' => 'booking_complete',
+                        'settings_type' => 'provider_notification'
+                    ];
+                    $notifications[] = [
+                        'key' => 'booking_complete',
+                        'settings_type' => 'serviceman_notification'
+                    ];
                     //updating payment status
                     $model->is_paid = 1;
-                    $key = 'booking_service_complete';
 
-                    //update admin commission (booking_details_amounts table)
-                    $model->update_admin_commission($model, $model->total_booking_amount, $model->provider_id);
+                    $provider = $model->provider;
 
-                    if (!$model->is_guest) {
+                    //provider suspend
+                    if ($provider) {
+                        //update admin commission (booking_details_amounts table)
+                        $model->update_admin_commission($model, $model->total_booking_amount, $model->provider_id);
+                    }
+
+
+                    if (!$model->is_guest && $model?->customer) {
                         //referral
                         $model->referral_earning_calculation($model->customer_id);
 
@@ -181,72 +219,194 @@ class Booking extends Model
                     //================ Transactions for Booking ================
 
                     //partial transaction
-                    if ($model->booking_partial_payments->isNotEmpty()) {
-                        if ($model['payment_method'] == 'cash_after_service') {
-                            $booking_partial_payment = new BookingPartialPayment;
-                            $booking_partial_payment->booking_id = $model->id;
-                            $booking_partial_payment->paid_with = 'cash_after_service';
-                            $booking_partial_payment->paid_amount = $model->booking_partial_payments->first()?->due_amount;
-                            $booking_partial_payment->due_amount = 0;
-                            $booking_partial_payment->save();
+                    if ($model?->provider) {
+                        if ($model->booking_partial_payments->isNotEmpty()) {
+                            if ($model['payment_method'] == 'cash_after_service') {
+                                $booking_partial_payment = new BookingPartialPayment;
+                                $booking_partial_payment->booking_id = $model->id;
+                                $booking_partial_payment->paid_with = 'cash_after_service';
+                                $booking_partial_payment->paid_amount = $model->booking_partial_payments->first()?->due_amount;
+                                $booking_partial_payment->due_amount = 0;
+                                $booking_partial_payment->save();
 
-                            complete_booking_transaction_for_partial_cas($model);  // waller + CAS payment
-                        } elseif ($model['payment_method'] != 'wallet_payment') {
-                            complete_booking_transaction_for_partial_digital($model);  //wallet + digital payment
+                                complete_booking_transaction_for_partial_cas($model);  // waller + CAS payment
+                            } elseif ($model['payment_method'] != 'wallet_payment') {
+                                complete_booking_transaction_for_partial_digital($model);  //wallet + digital payment
+                            }
+
+                        } elseif ($model->payment_method == 'cash_after_service') {
+                            //CAS
+                            complete_booking_transaction_for_cash_after_service($model);
+                        } else {
+                            //Digital (normal)
+                            if ($model->additional_charge == 0) {
+                                complete_booking_transaction_for_digital_payment($model);
+                            }
+
+                            //Digital (add service) [Edited Booking]
+                            if ($model->additional_charge > 0) {
+                                complete_booking_transaction_for_digital_payment_and_extra_service($model);
+                            }
                         }
 
-                    } elseif ($model->payment_method == 'cash_after_service') {
-                        //CAS
-                        complete_booking_transaction_for_cash_after_service($model);
-                    } else {
-                        //Digital (normal)
-                        if ($model->additional_charge == 0) {
-                            complete_booking_transaction_for_digital_payment($model);
-                        }
+                        $limit_status = provider_warning_amount_calculate($provider->owner->account->account_payable, $provider->owner->account->account_receivable);
 
-                        //Digital (add service) [Edited Booking]
-                        if($model->additional_charge > 0) {
-                            complete_booking_transaction_for_digital_payment_and_extra_service($model);
+                        if ($limit_status == '100_percent' && business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values) {
+                            $provider->is_suspended = 1;
+                            $provider->save();
+
+                            $title = get_push_notification_message('provider_suspend', 'provider_notification', $provider?->owner?->current_language_key);
+                            if ($provider?->owner?->fcm_token && $title) {
+                                device_notification($provider?->owner?->fcm_token, $title, null, null, $model->id, 'suspend', null, $provider->id);
+                            }
                         }
                     }
 
                 } elseif ($model->booking_status == 'canceled') {
-                    $key = 'booking_cancel';
+                    $notifications[] = [
+                        'key' => 'booking_cancel',
+                        'settings_type' => 'customer_notification'
+                    ];
+                    $notifications[] = [
+                        'key' => 'booking_cancel',
+                        'settings_type' => 'provider_notification'
+                    ];
+                    $notifications[] = [
+                        'key' => 'booking_cancel',
+                        'settings_type' => 'serviceman_notification'
+                    ];
 
                     //refund transaction
-                    refund_transaction_for_canceled_booking($model);
+                    if ($model?->customer) {
+                        refund_transaction_for_canceled_booking($model);
+                    }
 
                 } elseif ($model->booking_status == 'refund_request') {
-                    $key = 'booking_refund';
+                    $notifications[] = [
+                        [
+                            'key' => 'refund',
+                            'settings_type' => 'customer_notification'
+                        ]
+                    ];
                 }
-                $data = business_config($key, 'notification_messages');
-                if (isset($data) && $data->is_active) {
-                    if (isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
-                        if (isset($model->customer)) {
-                            device_notification($model->customer->fcm_token, $data->live_values[$key . '_message'], null, null, $model->id, 'booking');
-                        }
-                        if (isset($model->provider->owner)) {
-                            device_notification($model->provider->owner->fcm_token, $data->live_values[$key . '_message'], null, null, $model->id, 'booking');
-                        }
-                        if (isset($model->serviceman->user)) {
-                            device_notification($model->serviceman->user->fcm_token, $data->live_values[$key . '_message'], null, null, $model->id, 'booking');
-                        }
-                    }
-                }
-            }
 
-            if ($model->isDirty('serviceman_id')) {
+
                 if (isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
-                    if (isset($model->serviceman->user)) {
-                        device_notification($model->serviceman->user->fcm_token, translate('New_booking'), null, null, $model->id, 'booking');
+                    foreach ($notifications ?? [] as $notification) {
+                        $key = $notification['key'];
+                        $settingsType = $notification['settings_type'];
+
+                        if ($settingsType == 'customer_notification') {
+                            $user = $model?->customer;
+                            $title = get_push_notification_message($key, $settingsType, $user?->current_language_key);
+                            if ($user?->fcm_token && $title) {
+                                device_notification($user?->fcm_token, $title, null, null, $model->id, 'booking');
+                            }
+                        }
+
+                        if ($settingsType == 'provider_notification') {
+                            if ((!business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values || $model?->provider?->is_suspended == 0) && $model->booking_status == 'pending') {
+                                $provider = $model?->provider?->owner;
+                                $title = get_push_notification_message($key, $settingsType, $provider?->current_language_key);
+                                if ($provider?->fcm_token && $title) {
+                                    device_notification($provider?->fcm_token, $title, null, null, $model->id, 'booking');
+                                }
+                            } else {
+                                $provider = $model?->provider?->owner;
+                                $title = get_push_notification_message($key, $settingsType, $provider?->current_language_key);
+                                if ($provider?->fcm_token && $title) {
+                                    device_notification($provider?->fcm_token, $title, null, null, $model->id, 'booking');
+                                }
+                            }
+                        }
+
+                        if ($settingsType == 'serviceman_notification') {
+                            $serviceman = $model?->serviceman?->user;
+                            $title = get_push_notification_message($key, $settingsType, $serviceman?->current_language_key);
+                            if ($serviceman?->fcm_token && $title) {
+                                device_notification($serviceman?->fcm_token, $title, null, null, $model->id, 'booking');
+                            }
+                        }
                     }
                 }
             }
         });
 
         self::updated(function ($model) {
-            // ... code here
+            $notifications = [];
+            $booking_notification_status = business_config('booking', 'notification_settings')->live_values;
+
+            if ($model->isDirty('serviceman_id')) {
+                $notifications[] = [
+                    'key' => 'serviceman_assign',
+                    'settings_type' => 'customer_notification'
+                ];
+                $notifications[] = [
+                    'key' => 'serviceman_assign',
+                    'settings_type' => 'provider_notification'
+                ];
+                $notifications[] = [
+                    'key' => 'serviceman_assign',
+                    'settings_type' => 'serviceman_notification'
+                ];
+            }
+
+            // Check if 'service_schedule_time' has been changed
+            if ($model->isDirty('service_schedule')) {
+                $notifications[] = [
+                    'key' => 'booking_schedule_time_change',
+                    'settings_type' => 'customer_notification'
+                ];
+                $notifications[] = [
+                    'key' => 'booking_schedule_time_change',
+                    'settings_type' => 'provider_notification'
+                ];
+                $notifications[] = [
+                    'key' => 'booking_schedule_time_change',
+                    'settings_type' => 'serviceman_notification'
+                ];
+            }
+
+            if (isset($booking_notification_status) && $booking_notification_status['push_notification_booking']) {
+                foreach ($notifications ?? [] as $notification) {
+                    $key = $notification['key'];
+                    $settingsType = $notification['settings_type'];
+
+                    if ($settingsType == 'customer_notification') {
+                        $user = $model?->customer;
+                        $title = get_push_notification_message($key, $settingsType, $user?->current_language_key);
+                        if ($user?->fcm_token && $title) {
+                            device_notification($user?->fcm_token, $title, null, null, $model->id, 'booking');
+                        }
+                    }
+
+                    if ($settingsType == 'provider_notification') {
+                        if ((!business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values || $model?->provider?->is_suspended == 0) && $model->booking_status == 'pending') {
+                            $provider = $model?->provider?->owner;
+                            $title = get_push_notification_message($key, $settingsType, $provider?->current_language_key);
+                            if ($provider?->fcm_token && $title) {
+                                device_notification($provider?->fcm_token, $title, null, null, $model->id, 'booking');
+                            }
+                        } else {
+                            $provider = $model?->provider?->owner;
+                            $title = get_push_notification_message($key, $settingsType, $provider?->current_language_key);
+                            if ($provider?->fcm_token && $title) {
+                                device_notification($provider?->fcm_token, $title, null, null, $model->id, 'booking');
+                            }
+                        }
+                    }
+
+                    if ($settingsType == 'serviceman_notification') {
+                        $serviceman = $model?->serviceman?->user;
+                        $title = get_push_notification_message($key, $settingsType, $serviceman?->current_language_key);
+                        if ($serviceman?->fcm_token && $title) {
+                            device_notification($serviceman?->fcm_token, $title, null, null, $model->id, 'booking');
+                        }
+                    }
+                }
+            }
         });
+
 
         self::deleting(function ($model) {
             // ... code here

@@ -18,18 +18,6 @@
                     </div>
                     <h5>{{translate('Dark_Mode')}}</h5>
                 </div>
-                <div class="setting-box-wrap">
-                    <div class="setting-box ltr-mode">
-                        <img src="{{asset('public/assets/provider-module')}}/img/ltr-icon.png" alt="">
-                    </div>
-                    <h5>{{translate('LTR')}}</h5>
-                </div>
-                <div class="setting-box-wrap">
-                    <div class="setting-box rtl-mode">
-                        <img src="{{asset('public/assets/provider-module')}}/img/rtl-icon.png" alt="">
-                    </div>
-                    <h5>{{translate('RTL')}}</h5>
-                </div>
             </div>
         </div>
     </div>

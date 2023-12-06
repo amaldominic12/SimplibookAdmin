@@ -74,8 +74,8 @@ class CustomerController extends Controller
         $validator = Validator::make($request->all(), [
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email|unique:users',
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|unique:users',
+            'email' => 'required|email',
+            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10',
             'password' => 'required|min:6',
             'gender' => 'in:male,female,others',
             'confirm_password' => 'required|same:password',
@@ -84,6 +84,14 @@ class CustomerController extends Controller
 
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 403);
+        }
+
+        //email & phone check
+        if (User::where('email', $request['email'])->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"email","message"=>translate('Email already taken')]]), 400);
+        }
+        if (User::where('phone', $request['phone'])->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"phone","message"=>translate('Phone already taken')]]), 400);
         }
 
         $user = $this->user;
@@ -188,8 +196,8 @@ class CustomerController extends Controller
         $validator = Validator::make($request->all(), [
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email|unique:users,email,' . $customer->id,
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|unique:users,phone,' . $customer->id,
+            'email' => 'required|email',
+            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10',
             'password' => 'min:6',
             'gender' => 'in:male,female,others',
             'confirm_password' => $request->has('password') ? 'required|same:password' : '',
@@ -198,6 +206,14 @@ class CustomerController extends Controller
 
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 403);
+        }
+
+        //email & phone check
+        if (User::where('email', $request['email'])->where('id', '!=', $customer->id)->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"email","message"=>translate('Email already taken')]]), 400);
+        }
+        if (User::where('phone', $request['phone'])->where('id', '!=', $customer->id)->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"phone","message"=>translate('Phone already taken')]]), 400);
         }
 
         $customer->first_name = $request->first_name;
@@ -238,7 +254,7 @@ class CustomerController extends Controller
                     file_remover('user/identity/', $image_name);
                 }
             }
-            $customers->forceDelete();
+            $customers->delete();
             return response()->json(response_formatter(DEFAULT_DELETE_200), 200);
         }
         return response()->json(response_formatter(DEFAULT_204), 200);

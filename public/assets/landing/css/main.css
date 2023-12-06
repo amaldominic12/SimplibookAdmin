@@ -386,7 +386,7 @@ footer {
     color: var(--white-clr);
 }
 
-.footer__wrapper-contact a:hover {
+.footer__wrapper-contact a:not(.cmn--btn):hover {
     color: var(--base-clr);
 }
 

@@ -34,26 +34,30 @@
                                 <div>
                                     <h3 class="c1 mb-2">{{translate('Booking')}}
                                         # {{$booking['readable_id']}}</h3>
-                                    <p class="opacity-75 fz-12">{{translate('Booking_Placed')}} : {{date('d-M-Y h:ia',strtotime($booking->created_at))}}</p>
+                                    <p class="opacity-75 fz-12">{{translate('Booking_Placed')}}
+                                        : {{date('d-M-Y h:ia',strtotime($booking->created_at))}}</p>
                                 </div>
                                 <div class="d-flex flex-wrap flex-xxl-nowrap gap-3">
                                     <div class="d-flex flex-wrap gap-3">
                                         @if($booking['payment_method'] == 'offline_payment' && !$booking['is_paid'])
-                                            <span onclick="route_alert_reload('{{route('admin.booking.offline-payment.verify',['booking_id' => $booking->id])}}', '{{translate('Want to verify the payment')}}?')"
-                                               class="btn btn-secondary">
+                                            <span
+                                                onclick="route_alert_reload('{{route('admin.booking.offline-payment.verify',['booking_id' => $booking->id])}}', '{{translate('Want to verify the payment')}}?')"
+                                                class="btn btn-secondary">
                                                 <span class="material-icons">done</span>{{translate('Verify Offline Payment')}}
                                             </span>
                                         @endif
                                         @if(in_array($booking['booking_status'], ['pending', 'accepted', 'ongoing']) && $booking->booking_partial_payments->isEmpty())
                                             <button class="btn btn--primary" data-bs-toggle="modal"
-                                                data-bs-target="#serviceUpdateModal--{{$booking['id']}}"
-                                                data-toggle="tooltip" title="{{translate('Add or remove services')}}">
-                                                <span class="material-symbols-outlined">edit</span>{{translate('Edit Services')}}
+                                                    data-bs-target="#serviceUpdateModal--{{$booking['id']}}"
+                                                    data-toggle="tooltip"
+                                                    title="{{translate('Add or remove services')}}">
+                                                <span
+                                                    class="material-symbols-outlined">edit</span>{{translate('Edit Services')}}
                                             </button>
                                         @endif
                                         <a href="{{route('admin.booking.invoice',[$booking->id])}}"
-                                            class="btn btn-primary" target="_blank">
-                                             <span class="material-icons">description</span>{{translate('Invoice')}}
+                                           class="btn btn-primary" target="_blank">
+                                            <span class="material-icons">description</span>{{translate('Invoice')}}
                                         </a>
                                     </div>
                                 </div>
@@ -81,11 +85,12 @@
 
                                         <!-- partially paid badge -->
                                         @if(!$booking->is_paid && $booking->booking_partial_payments->isNotEmpty())
-                                            <span class="small badge badge-info text-success p-1 fz-10">{{translate('Partially paid')}}</span>
+                                            <span
+                                                class="small badge badge-info text-success p-1 fz-10">{{translate('Partially paid')}}</span>
                                         @endif
                                     </p>
                                     <p class="mb-2"><span>{{translate('Booking_Otp')}} :</span> <span
-                                        class="c1 text-capitalize"
+                                            class="c1 text-capitalize"
                                         >{{$booking?->booking_otp ?? ''}}</span></p>
                                     <h5>{{translate('Service_Schedule_Date')}} : <span
                                             id="service_schedule__span">{{date('d/m/Y h:ia',strtotime($booking->service_schedule))}}</span>
@@ -96,11 +101,6 @@
                             <!-- Booking summary -->
                             <div class="d-flex justify-content-start gap-2">
                                 <h3 class="mb-3">{{translate('Booking_Summary')}}</h3>
-                                {{-- @if($booking['booking_status'] == 'pending' || $booking['booking_status'] == 'accepted' || $booking['booking_status'] == 'ongoing')
-                                    <i class="material-icons" data-bs-toggle="modal"
-                                       data-bs-target="#serviceUpdateModal--{{$booking['id']}}"
-                                       data-toggle="tooltip" title="{{translate('Add or remove services')}}">edit</i>
-                                @endif --}}
                             </div>
 
                             <div class="table-responsive border-bottom">
@@ -237,16 +237,20 @@
                                 <span class="title-color">{{translate('Payment Status')}}</span>
 
                                 <label class="switcher payment-status-text">
-                                    <input class="switcher_input" id="payment_status" onclick="payment_status_change($(this).is(':checked')===true?1:0)" type="checkbox" value="{{$booking['is_paid'] ? '1' : '0'}}" {{$booking['is_paid'] ? 'checked' : ''}}>
+                                    <input class="switcher_input" id="payment_status"
+                                           onclick="payment_status_change($(this).is(':checked')===true?1:0)"
+                                           type="checkbox"
+                                           value="{{$booking['is_paid'] ? '1' : '0'}}" {{$booking['is_paid'] ? 'checked' : ''}}>
                                     <span class="switcher_control"></span>
                                 </label>
                             </div>
 
-                            <div class="mt-3">
+                            <div class="mt-3 serviceman-lists">
                                 <select class="js-select" id="serviceman_assign">
                                     <option value="no_serviceman">{{translate('Select Serviceman')}}</option>
                                     @foreach($servicemen as $serviceman)
-                                        <option value="{{$serviceman->id}}" {{$booking->serviceman_id == $serviceman->id ? 'selected' : ''}} >
+                                        <option
+                                            value="{{$serviceman->id}}" {{$booking->serviceman_id == $serviceman->id ? 'selected' : ''}} >
                                             {{$serviceman->user ? Str::limit($serviceman->user->first_name.' '.$serviceman->user->last_name, 30):''}}
                                         </option>
                                     @endforeach
@@ -269,7 +273,9 @@
 
                             <div class="mt-3">
                                 @if(!in_array($booking->booking_status,['ongoing','completed']))
-                                    <input type="datetime-local" class="form-control" name="service_schedule" value="{{$booking->service_schedule}}" id="service_schedule"  onchange="service_schedule_update()">
+                                    <input type="datetime-local" class="form-control" name="service_schedule"
+                                           value="{{$booking->service_schedule}}" id="service_schedule"
+                                           onchange="service_schedule_update()">
                                 @endif
                             </div>
 
@@ -284,29 +290,33 @@
                                     <div>
                                         <div class="d-flex flex-wrap gap-3 justify-content-lg-start">
                                             @foreach ($booking->evidence_photos ?? [] as $key => $img)
-                                                <img src="{{asset('storage/app/public/booking/evidence').'/'.$img}}" width="100"  class="max-height-100"
+                                                <img src="{{asset('storage/app/public/booking/evidence').'/'.$img}}"
+                                                     width="100" class="max-height-100"
                                                      onerror="this.src='{{asset('public/assets/provider-module')}}/img/media/info-details.png'">
                                             @endforeach
                                         </div>
                                     </div>
                                 </div>
                                 <!-- End Customer Info -->
+
                                 <!-- Customer Info -->
                                 <div class="c1-light-bg radius-10 py-3 px-4">
-                                    <div class="d-flex justify-content-start gap-2">
+                                    <div class="d-flex justify-content-between gap-2">
                                         <h4 class="mb-2">{{translate('Customer_Information')}}</h4>
                                         @if($booking['booking_status'] == 'pending' || $booking['booking_status'] == 'accepted' || $booking['booking_status'] == 'ongoing')
-                                            <i class="material-icons" data-bs-toggle="modal"
-                                               data-bs-target="#serviceAddressModal--{{$booking['id']}}"
-                                               data-toggle="tooltip" data-placement="top"
-                                               title="{{translate('Update service address')}}">edit</i>
+                                            <span class="square-btn">
+                                                <i class="material-icons fs-14" data-bs-toggle="modal"
+                                                   data-bs-target="#serviceAddressModal--{{$booking['id']}}"
+                                                   data-toggle="tooltip" data-placement="top"
+                                                   title="{{translate('Update service address')}}">edit</i>
+                                            </span>
                                         @endif
                                     </div>
 
                                     @php($customer_name = $booking?->service_address?->contact_person_name)
                                     @php($customer_phone = $booking?->service_address?->contact_person_number)
                                     <h5 class="c1 mb-3">
-                                        @if(!$booking?->is_guest)
+                                        @if(!$booking?->is_guest && $booking?->customer)
                                             <a href="{{route('admin.customer.detail',[$booking?->customer?->id, 'web_page'=>'overview'])}}"
                                                class="c1">{{Str::limit($customer_name, 30)}}</a>
                                         @else
@@ -329,8 +339,17 @@
                                 <!-- End Customer Info -->
 
                                 <!-- Provider Info -->
-                                <div class="c1-light-bg radius-10 py-3 px-4">
-                                    <h4 class="mb-2">{{translate('Provider Information')}}</h4>
+                                <div class="c1-light-bg radius-10 py-3 px-4 provider-information">
+                                    <div class="d-flex justify-content-between gap-2">
+                                        <h4 class="mb-2">{{translate('Provider Information')}}</h4>
+                                        @if($booking->provider)
+                                            <span class="square-btn" data-bs-toggle="modal"
+                                                  data-bs-target="#providerModal">
+                                            <i class="material-icons fs-14" data-toggle="tooltip" data-placement="top"
+                                               title="{{translate('Update service address')}}">edit</i>
+                                        </span>
+                                        @endif
+                                    </div>
                                     @if(isset($booking->provider))
                                         <h5 class="c1 mb-3">{{Str::limit($booking->provider->company_name??'', 30)}}</h5>
                                         <ul class="list-info">
@@ -350,7 +369,7 @@
                                 <!-- End Provider Info -->
 
                                 <!-- Lead Service Info -->
-                                <div class="c1-light-bg radius-10 py-3 px-4">
+                                <div class="c1-light-bg radius-10 py-3 px-4 serviceman-information">
                                     <h4 class="mb-2">{{translate('Lead_Service_Information')}}</h4>
                                     @if(isset($booking->serviceman))
                                         <h5 class="c1 mb-3">{{Str::limit($booking->serviceman && $booking->serviceman->user ? $booking->serviceman->user->first_name.' '.$booking->serviceman->user->last_name:'', 30)}}</h5>
@@ -380,7 +399,16 @@
     @include('bookingmodule::admin.booking.partials.details._service-address-modal')
 
     <!-- Service Update Modal -->
-    @include('bookingmodule::admin.booking.partials.details._service-modal')
+    @include('bookingmodule::admin.booking.partials.details._service-modal');
+
+    <!-- Available Providers Modal -->
+    <div class="modal fade" id="providerModal" tabindex="-1" aria-labelledby="providerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content modal-content-data" id="modal-data-info">
+                @include('bookingmodule::admin.booking.partials.details.provider-info-modal-data')
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('script')
@@ -544,7 +572,7 @@
 
         //reset [while close modal]
         $("#serviceUpdateModal--{{$booking['id']}}").on('hidden.bs.modal', function () {
-            $('#service_selector__select').prop('selectedIndex',0);
+            $('#service_selector__select').prop('selectedIndex', 0);
             $("#service_variation_selector__select").html('<option value="" selected disabled>{{translate('Select Service Variant')}}</option>');
             $("#service_quantity").val('');
         });
@@ -559,20 +587,20 @@
             //let form_data = $('#booking-edit-table').serializeArray();
 
             //validation
-            if(service_id === '' || service_id === null) {
-                toastr.error('{{translate('Select a service')}}', { CloseButton: true, ProgressBar: true });
+            if (service_id === '' || service_id === null) {
+                toastr.error('{{translate('Select a service')}}', {CloseButton: true, ProgressBar: true});
                 return;
-            } else if(variant_key === '' || variant_key === null) {
-                toastr.error('{{translate('Select a variation')}}', { CloseButton: true, ProgressBar: true });
+            } else if (variant_key === '' || variant_key === null) {
+                toastr.error('{{translate('Select a variation')}}', {CloseButton: true, ProgressBar: true});
                 return;
-            } else if(quantity < 1) {
-                toastr.error('{{translate('Quantity must not be empty')}}', { CloseButton: true, ProgressBar: true });
+            } else if (quantity < 1) {
+                toastr.error('{{translate('Quantity must not be empty')}}', {CloseButton: true, ProgressBar: true});
                 return;
             }
 
             //if variant key already exists
             let variant_key_array = [];
-            $('input[name="variant_keys[]"]').each(function() {
+            $('input[name="variant_keys[]"]').each(function () {
                 variant_key_array.push($(this).val());
             });
 
@@ -583,17 +611,17 @@
                 const updated_qty = old_qty + quantity;
 
                 const old_total_cost = parseFloat($(`#total-cost-${variant_key}`).text());
-                const updated_total_cost = ((old_total_cost * updated_qty)/old_qty).toFixed(decimal_point);
+                const updated_total_cost = ((old_total_cost * updated_qty) / old_qty).toFixed(decimal_point);
 
                 const old_discount_amount = parseFloat($(`#discount-amount-${variant_key}`).text());
-                const updated_discount_amount = ((old_discount_amount * updated_qty)/old_qty).toFixed(decimal_point);
+                const updated_discount_amount = ((old_discount_amount * updated_qty) / old_qty).toFixed(decimal_point);
 
 
                 $(`#qty-${variant_key}`).val(updated_qty);
                 $(`#total-cost-${variant_key}`).text(updated_total_cost);
                 $(`#discount-amount-${variant_key}`).text(updated_discount_amount);
 
-                toastr.success('{{translate('Added successfully')}}', { CloseButton: true, ProgressBar: true });
+                toastr.success('{{translate('Added successfully')}}', {CloseButton: true, ProgressBar: true});
                 return;
             }
 
@@ -607,9 +635,9 @@
                 beforeSend: function () {
                     $('.preloader').show();
                 },
-                success: function(response) {
+                success: function (response) {
                     $("#service-edit-tbody").append(response.view);
-                    toastr.success('{{translate('Added successfully')}}', { CloseButton: true, ProgressBar: true });
+                    toastr.success('{{translate('Added successfully')}}', {CloseButton: true, ProgressBar: true});
                 },
                 complete: function () {
                     $('.preloader').hide();
@@ -666,7 +694,7 @@
         });
 
 
-        $( document ).ready(function() {
+        $(document).ready(function () {
             function initAutocomplete() {
                 var myLatLng = {
 
@@ -689,7 +717,7 @@
 
                 marker.setMap(map);
                 var geocoder = geocoder = new google.maps.Geocoder();
-                google.maps.event.addListener(map, 'click', function(mapsMouseEvent) {
+                google.maps.event.addListener(map, 'click', function (mapsMouseEvent) {
                     var coordinates = JSON.stringify(mapsMouseEvent.latLng.toJSON(), null, 2);
                     var coordinates = JSON.parse(coordinates);
                     var latlng = new google.maps.LatLng(coordinates['lat'], coordinates['lng']);
@@ -702,7 +730,7 @@
 
                     geocoder.geocode({
                         'latLng': latlng
-                    }, function(results, status) {
+                    }, function (results, status) {
                         if (status == google.maps.GeocoderStatus.OK) {
                             if (results[1]) {
                                 document.getElementById('address').innerHtml = results[1].formatted_address;
@@ -744,7 +772,7 @@
                             title: place.name,
                             position: place.geometry.location,
                         });
-                        google.maps.event.addListener(mrkr, "click", function(event) {
+                        google.maps.event.addListener(mrkr, "click", function (event) {
                             document.getElementById('latitude').value = this.position.lat();
                             document.getElementById('longitude').value = this.position.lng();
                         });
@@ -765,13 +793,13 @@
         });
 
 
-        $('.__right-eye').on('click', function(){
-            if($(this).hasClass('active')) {
+        $('.__right-eye').on('click', function () {
+            if ($(this).hasClass('active')) {
                 $(this).removeClass('active')
                 $(this).find('i').removeClass('tio-invisible')
                 $(this).find('i').addClass('tio-hidden-outlined')
                 $(this).siblings('input').attr('type', 'password')
-            }else {
+            } else {
                 $(this).addClass('active')
                 $(this).siblings('input').attr('type', 'text')
 
@@ -780,6 +808,163 @@
                 $(this).find('i').removeClass('tio-hidden-outlined')
             }
         })
+    </script>
+
+    <script>
+        $(document).ready(function () {
+
+            $(document).on('click', '.sort-by-class', function () {
+                console.log('hi')
+                const route = '{{url('admin/provider/available-provider')}}'
+                var sortOption = document.querySelector('input[name="sort"]:checked').value;
+                var bookingId = "{{$booking->id}}"
+
+                $.get({
+                    url: route,
+                    dataType: 'json',
+                    data: {
+                        sort_by: sortOption,
+                        booking_id: bookingId
+                    },
+                    beforeSend: function () {
+                        // $('.preloader').show();
+                    },
+                    success: function (response) {
+                        $('.modal-content-data').html(response.view);
+                    },
+                    complete: function () {
+                        // $('.preloader').hide();
+                    },
+                    error: function () {
+                        toastr.error('{{translate('Failed to load')}}')
+                    }
+                });
+            })
+        });
+
+        $(document).ready(function () {
+
+            $(document).on('click', function (event) {
+                const route = '{{url('admin/provider/provider-info')}}';
+                var bookingId = "{{$booking->id}}";
+
+                $.get({
+                    url: route,
+                    dataType: 'json',
+                    data: {
+                        booking_id: bookingId,
+                    },
+                    beforeSend: function () {
+                        // $('.preloader').show();
+                    },
+                    success: function (response) {
+                        $('.provider-information').html(response.view);
+                        $('.serviceman-information').html(response.serviceman_view);
+                    },
+                    complete: function () {
+                        // $('.preloader').hide();
+                    },
+                    error: function (jqXHR, exception) {
+                        if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                            console.log(jqXHR.responseJSON.message);
+                            toastr.error(jqXHR.responseJSON.message);
+                        } else {
+                            console.log("An unexpected error occurred.");
+                            toastr.error("An unexpected error occurred.");
+                        }
+                    }
+                });
+            })
+        });
+
+
+        $(document).ready(function () {
+            // Attach the keyup event handler to the search input
+            $(document).on('keyup', '.search-form-input', function () {
+                const route = '{{url('admin/provider/available-provider')}}';
+                var sortOption = document.querySelector('input[name="sort"]:checked').value;
+                var bookingId = "{{$booking->id}}";
+                var searchTerm = $('.search-form-input').val();
+
+                $.get({
+                    url: route,
+                    dataType: 'json',
+                    data: {
+                        sort_by: sortOption,
+                        booking_id: bookingId,
+                        search: searchTerm,
+                    },
+                    beforeSend: function () {
+                        // Handle any pre-request actions
+                    },
+                    success: function (response) {
+                        // Update the content
+                        $('.modal-content-data').html(response.view);
+
+                        // Set focus and cursor position after the last character
+                        var cursorPosition = searchTerm.lastIndexOf(searchTerm.charAt(searchTerm.length - 1)) + 1;
+                        $('.search-form-input').focus().get(0).setSelectionRange(cursorPosition, cursorPosition);
+                    },
+                    complete: function () {
+                        // Handle completion
+                    },
+                    error: function () {
+                        toastr.error('{{translate('Failed to load')}}');
+                    }
+                });
+            });
+        });
+
+        function updateProvider(providerId) {
+            const bookingId = "{{$booking->id}}";
+            const route = '{{ url("admin/provider/reassign-provider") }}' + '/' + bookingId;
+            const sortOption = document.querySelector('input[name="sort"]:checked').value;
+            const searchTerm = $('.search-form-input').val();
+
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+
+            $.ajax({
+                url: route,
+                type: 'PUT', // Specify the PUT method
+                dataType: 'json',
+                data: {
+                    sort_by: sortOption,
+                    booking_id: bookingId,
+                    search: searchTerm,
+                    provider_id: providerId
+                },
+                beforeSend: function () {
+                    // Handle any pre-request actions
+                },
+                success: function (response) {
+                    // Update the content
+                    $('.modal-content-data').html(response.view);
+                    toastr.success('{{translate('Successfully reassign provider')}}');
+                    setTimeout(function() {
+                        location.reload()
+                    }, 600);
+                },
+                complete: function () {
+                    // Handle completion
+                },
+                error: function () {
+                    toastr.error('{{translate('Failed to load')}}');
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            // Attach a click event handler to the button
+            $('.your-button-selector').on('click', function () {
+                updateSearchResults(); // Call the function when the button is clicked
+            });
+        });
+
+
     </script>
     <!-- End -->
 @endpush

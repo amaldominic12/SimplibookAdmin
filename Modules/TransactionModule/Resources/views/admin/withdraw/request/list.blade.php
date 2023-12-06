@@ -138,7 +138,7 @@
                                                         <td><input type="checkbox" class="multi-check" value="{{$withdraw_request->id}}"></td>
                                                         <td>{{$withdraw_requests->firstitem()+$key}}</td>
                                                         <td class="text-capitalize">
-                                                            @if($withdraw_request->user->provider)
+                                                            @if($withdraw_request?->user?->provider)
                                                             <a href="{{route('admin.provider.details',[$withdraw_request->user->provider->id, 'web_page'=>'overview'])}}">
                                                                 {{Str::limit($withdraw_request->user->provider->company_name, 30)}}
                                                             </a>

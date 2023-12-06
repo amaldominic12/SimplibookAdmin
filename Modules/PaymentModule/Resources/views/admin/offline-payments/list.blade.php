@@ -11,9 +11,19 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12">
+                    <div class="page-title-wrap mb-3">
+                        <h2 class="page-title">{{translate('3rd_party')}}</h2>
+                    </div>
+
+                    <!-- Nav Tabs -->
+                    <div class="mb-3">
+                        <ul class="nav nav--tabs nav--tabs__style2">
+                            @include('businesssettingsmodule::admin.partials.third-party-partial')
+                        </ul>
+                    </div>
                     <div
-                        class="page-title-wrap d-flex justify-content-between flex-wrap align-items-center gap-3 mb-4">
-                        <h2 class="page-title">{{translate('payment_gateway_configuration')}}</h2>
+                        class="page-title-wrap d-flex justify-content-end flex-wrap align-items-center gap-3 mb-4">
+{{--                        <h2 class="page-title">{{translate('payment_gateway_configuration')}}</h2>--}}
                         <a href="{{route('admin.configuration.offline-payment.create')}}" class="btn btn--primary">+ {{translate('Add_method')}}</a>
                     </div>
 
@@ -22,11 +32,11 @@
                         <ul class="nav nav--tabs nav--tabs__style2" role="tablist">
                             <li class="nav-item">
                                 <a class="nav-link {{$type=='digital_payment'?'active':''}}"
-                                href="{{route('admin.configuration.payment-get')}}??type=digital_payment">{{translate('Digital Payment Gateways')}}</a>
+                                href="{{url('admin/configuration/get-third-party-config')}}?web_page=payment_config&type=digital_payment">{{translate('Digital Payment Gateways')}}</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {{$type=='offline_payment'?'active':''}}"
-                                href="{{route('admin.configuration.offline-payment.list')}}?type=offline_payment">{{translate('Offline Payment')}}</a>
+                                href="{{route('admin.configuration.offline-payment.list')}}?web_page=payment_config&type=offline_payment">{{translate('Offline Payment')}}</a>
                             </li>
                         </ul>
                     </div>

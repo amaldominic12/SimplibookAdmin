@@ -151,13 +151,17 @@ class ServicemanController extends Controller
         $validator = Validator::make($request->all(), [
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email|unique:users,email,' . $employee->id,
+            'email' => 'required|email',
             'password' => '',
             'profile_image' => 'image|mimes:jpeg,jpg,png,gif|max:10000',
         ]);
 
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        }
+
+        if (User::where('email', $request['email'])->where('id', '!=', $employee->id)->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"email","message"=>translate('Email already taken')]]), 400);
         }
 
         $employee->first_name = $request->first_name;
@@ -343,5 +347,20 @@ class ServicemanController extends Controller
         $customer->save();
 
         return response()->json(response_formatter(DEFAULT_UPDATE_200), 200);
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function change_language(Request $request): JsonResponse
+    {
+        if (auth('api')->user()){
+            $serviceman = $this->employee::find(auth('api')->user()->id);
+            $serviceman->current_language_key = $request->header('X-localization') ?? 'en';
+            $serviceman->save();
+            return response()->json(response_formatter(DEFAULT_200), 200);
+        }
+        return response()->json(response_formatter(DEFAULT_404), 200);
     }
 }

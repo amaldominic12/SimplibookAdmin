@@ -8,10 +8,10 @@
         <div class="container">
             <div class="banner-wrapper justify-content-between">
                 <div class="banner-content wow animate__fadeInUp">
-                    <h6 class="subtitle text--btn">{{bs_data($settings,'top_title', 1)}}</h6>
-                    <h1 class="title">{{bs_data($settings,'top_description', 1)}}</h1>
+                    <h6 class="subtitle text--btn">{{bs_data_text($settingss,'top_title', 1)}}</h6>
+                    <h1 class="title">{{bs_data_text($settingss,'top_description', 1)}}</h1>
                     <p class="txt text--title">
-                        {{bs_data($settings,'top_sub_title', 1)}}
+                        {{bs_data_text($settingss,'top_sub_title', 1)}}
                     </p>
                     <div class="app-btns d-flex flex-wrap">
                         @if($settings->where('key_name','app_url_appstore')->first()->is_active??0)
@@ -59,7 +59,7 @@
     <section class="service-section py-25">
         <div class="scroll-elem" id="service"></div>
         <div class="container position-relative">
-            <h3 class="section-title">{{bs_data($settings,'mid_title', 1)}}</h3>
+            <h3 class="section-title">{{bs_data_text($settingss,'mid_title', 1)}}</h3>
             <div class="service-slide-nav">
                 <span class="service-slide-prev slide-icon">
                     <i class="las la-arrow-left"></i>
@@ -139,9 +139,9 @@
         <div class="container">
             <div class="about__wrapper">
                 <div class="about__wrapper-content  wow animate__fadeInUp">
-                    <h3 class="section-title text-start ms-0">{{bs_data($settings,'about_us_title', 1)}}</h3>
+                    <h3 class="section-title text-start ms-0">{{bs_data_text($settingss,'about_us_title', 1)}}</h3>
                     <p>
-                        {{bs_data($settings,'about_us_description', 1)}}
+                        {{bs_data_text($settingss,'about_us_description', 1)}}
                     </p>
                     <a href="{{route('page.about-us')}}" class="cmn--btn2">
                         Read More <i class="las la-long-arrow-alt-right"></i>
@@ -164,7 +164,7 @@
     <section class="contact-info-section py-25 wow animate__fadeInUp">
         <div class="container">
             <div class="row g-2 g-sm-3 g-md-4 justify-content-center">
-                @foreach(bs_data($settings,'speciality', 1)??[] as $item)
+                @foreach($specialities??[] as $item)
                     <div class="col-sm-6 col-lg-4">
                         <div class="counter__item">
                             <div class="counter__item-left">
@@ -191,7 +191,7 @@
             <div class="app-slider-wrapper">
                 <div class="app-content">
                     <div class="app-slider owl-theme owl-carousel">
-                        @foreach(bs_data($settings,'features', 1)??[] as $item)
+                        @foreach($features??[] as $item)
                             <div>
                                 <h3 class="subtitle">{{$item['title']}}</h3>
                                 <p>{{$item['sub_title']}}</p>
@@ -247,12 +247,12 @@
                         src="{{asset('storage/app/public/landing-page')}}/{{bs_data($settings,'provider_section_image', 1)}}"
                         alt="" class="left-icon">
                     <div class="content text-center">
-                        <h2 class="title text-uppercase">{{bs_data($settings,'registration_title', 1)}}</h2>
+                        <h2 class="title text-uppercase">{{bs_data_text($settingss,'registration_title', 1)}}</h2>
                         <p class="text-btn-title">
-                            {{bs_data($settings,'registration_description', 1)}}
+                            {{bs_data_text($settingss,'registration_description', 1)}}
                         </p>
                     </div>
-                    @if(bs_data($settings,'registration_description', 1)??0)
+                    @if(bs_data_text($settingss,'registration_description', 1)??0)
                         <div class="text-center">
                             <a href="{{route('provider.auth.sign-up')}}"
                                class="cmn--btn">{{translate('register_here')}}</a>
@@ -266,10 +266,10 @@
     <!-- Testimonial Section Start -->
     <section class="testimonial-section pt-25 pb-50">
         <div class="container-fluid">
-            <h3 class="section-title mb-0">  {{bs_data($settings,'bottom_title', 1)}}</h3>
+            <h3 class="section-title mb-0">  {{bs_data_text($settingss,'bottom_title', 1)}}</h3>
             <div class="testimonial-slider owl-theme owl-carousel">
                 <!-- Testimonial Slider Single Slide -->
-                @foreach(bs_data($settings,'testimonial', 1)??[] as $item)
+                @foreach($testimonials ??[] as $item)
                     <div class="testimonial__item">
                         <div class="testimonial__item-img">
                             <img src="{{asset('storage/app/public/landing-page')}}/{{$item['image']}}"

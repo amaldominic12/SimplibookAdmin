@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Modules\BusinessSettingsModule\Entities\Translation;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Modules\PaymentModule\Entities\Bonus;
 use Rap2hpoutre\FastExcel\FastExcel;
@@ -38,7 +39,7 @@ class BonusController extends Controller
         $status = $request->has('status') ? $request['status'] : 'all';
         $query_param = ['search' => $search, 'status' => $status];
 
-        $bonuses = $this->bonus
+        $bonuses = $this->bonus->withoutGlobalScope('translate')
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search']);
                 return $query->where(function ($query) use ($keys) {
@@ -73,8 +74,10 @@ class BonusController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'bonus_title' => 'required|string',
-            'short_description' => 'required|string',
+            'bonus_title' => 'required',
+            'bonus_title.0' => 'required',
+            'short_description' => 'required',
+            'short_description.0' => 'required',
             'bonus_amount_type' => 'required|in:percent,amount',
             'bonus_amount' => [
                 'required', 'gt:0',
@@ -89,11 +92,14 @@ class BonusController extends Controller
             'maximum_bonus_amount' => $request['bonus_amount_type'] == 'percent' ? 'required|numeric|gt:0' : '',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
+        ],[
+            'bonus_title.0.required'=>translate('default_bonus_title_is_required'),
+            'short_description.0.required'=>translate('default_short_description_is_required'),
         ]);
 
         $bonus = $this->bonus;
-        $bonus->bonus_title = $request['bonus_title'];
-        $bonus->short_description = $request['short_description'];
+        $bonus->bonus_title = $request->bonus_title[array_search('default', $request->lang)];
+        $bonus->short_description = $request->short_description[array_search('default', $request->lang)];
         $bonus->bonus_amount_type = $request['bonus_amount_type'];
         $bonus->bonus_amount = $request['bonus_amount'];
         $bonus->minimum_add_amount = $request['minimum_add_amount'];
@@ -101,6 +107,60 @@ class BonusController extends Controller
         $bonus->start_date = $request['start_date'];
         $bonus->end_date = $request['end_date'];
         $bonus->save();
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request->bonus_title[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\PaymentModule\Entities\Bonus',
+                            'translationable_id' => $bonus->id,
+                            'locale' => $key,
+                            'key' => 'bonus_title'],
+                        ['value' => $bonus->bonus_title]
+                    );
+                }
+            } else {
+
+                if ($request->bonus_title[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\PaymentModule\Entities\Bonus',
+                            'translationable_id' => $bonus->id,
+                            'locale' => $key,
+                            'key' => 'bonus_title'],
+                        ['value' => $request->bonus_title[$index]]
+                    );
+                }
+            }
+
+            if ($default_lang == $key && !($request->short_description[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\PaymentModule\Entities\Bonus',
+                            'translationable_id' => $bonus->id,
+                            'locale' => $key,
+                            'key' => 'short_description'],
+                        ['value' => $bonus->short_description]
+                    );
+                }
+            } else {
+
+                if ($request->short_description[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\PaymentModule\Entities\Bonus',
+                            'translationable_id' => $bonus->id,
+                            'locale' => $key,
+                            'key' => 'short_description'],
+                        ['value' => $request->short_description[$index]]
+                    );
+                }
+            }
+        }
 
         Toastr::success(DEFAULT_STORE_200['message']);
         return redirect()->route('admin.bonus.list');
@@ -113,7 +173,7 @@ class BonusController extends Controller
      */
     public function edit($id): Renderable
     {
-        $bonus = $this->bonus->find($id);
+        $bonus = $this->bonus->withoutGlobalScope('translate')->find($id);
         return View('paymentmodule::admin.bonus.edit', compact('bonus'));
     }
 
@@ -125,8 +185,10 @@ class BonusController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'bonus_title' => 'required|string',
-            'short_description' => 'required|string',
+            'bonus_title' => 'required',
+            'bonus_title.0' => 'required',
+            'short_description' => 'required',
+            'short_description.0' => 'required',
             'bonus_amount_type' => 'required|in:percent,amount',
             'bonus_amount' => [
                 'required', 'gt:0',
@@ -141,17 +203,20 @@ class BonusController extends Controller
             'maximum_bonus_amount' => $request['bonus_amount_type'] == 'percent' ? 'required|numeric|gt:0' : '',
             'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
+        ], [
+                'bonus_title.0.required'=>translate('default_bonus_title_is_required'),
+                'short_description.0.required'=>translate('default_short_description_is_required'),
+            ]);
 
-        $bonus = $this->bonus->find($id);
+        $bonus = $this->bonus->withoutGlobalScope('translate')->find($id);
 
         if(!isset($bonus)) {
             Toastr::error(DEFAULT_404['message']);
             return back();
         }
 
-        $bonus->bonus_title = $request['bonus_title'];
-        $bonus->short_description = $request['short_description'];
+        $bonus->bonus_title =  $request->bonus_title[array_search('default', $request->lang)];
+        $bonus->short_description = $request->short_description[array_search('default', $request->lang)];
         $bonus->bonus_amount_type = $request['bonus_amount_type'];
         $bonus->bonus_amount = $request['bonus_amount'];
         $bonus->minimum_add_amount = $request['minimum_add_amount'];
@@ -159,6 +224,60 @@ class BonusController extends Controller
         $bonus->start_date = $request['start_date'];
         $bonus->end_date = $request['end_date'];
         $bonus->save();
+
+        $default_lang = str_replace('_', '-', app()->getLocale());
+
+        foreach ($request->lang as $index => $key) {
+            if ($default_lang == $key && !($request->bonus_title[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\PaymentModule\Entities\Bonus',
+                            'translationable_id' => $bonus->id,
+                            'locale' => $key,
+                            'key' => 'bonus_title'],
+                        ['value' => $bonus->bonus_title]
+                    );
+                }
+            } else {
+
+                if ($request->bonus_title[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\PaymentModule\Entities\Bonus',
+                            'translationable_id' => $bonus->id,
+                            'locale' => $key,
+                            'key' => 'bonus_title'],
+                        ['value' => $request->bonus_title[$index]]
+                    );
+                }
+            }
+
+            if ($default_lang == $key && !($request->short_description[$index])) {
+                if ($key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\PaymentModule\Entities\Bonus',
+                            'translationable_id' => $bonus->id,
+                            'locale' => $key,
+                            'key' => 'short_description'],
+                        ['value' => $bonus->short_description]
+                    );
+                }
+            } else {
+
+                if ($request->short_description[$index] && $key != 'default') {
+                    Translation::updateOrInsert(
+                        [
+                            'translationable_type' => 'Modules\PaymentModule\Entities\Bonus',
+                            'translationable_id' => $bonus->id,
+                            'locale' => $key,
+                            'key' => 'short_description'],
+                        ['value' => $request->short_description[$index]]
+                    );
+                }
+            }
+        }
 
         Toastr::success(DEFAULT_UPDATE_200['message']);
         return back();
@@ -171,7 +290,9 @@ class BonusController extends Controller
      */
     public function destroy($id): RedirectResponse
     {
-        $this->bonus->where('id', $id)->delete();
+        $bonus = $this->bonus->where('id', $id)->withoutGlobalScope('translate')->first();
+        $bonus->delete();
+        $this->bonus->where('id', $id)->withoutGlobalScope('translate')->delete();
         Toastr::success(DEFAULT_DELETE_200['message']);
         return back();
     }
@@ -184,8 +305,8 @@ class BonusController extends Controller
      */
     public function status_update(Request $request, $id): JsonResponse
     {
-        $bonus = $this->bonus->where('id', $id)->first();
-        $this->bonus->where('id', $id)->update(['is_active' => !$bonus->is_active]);
+        $bonus = $this->bonus->where('id', $id)->withoutGlobalScope('translate')->first();
+        $this->bonus->where('id', $id)->withoutGlobalScope('translate')->update(['is_active' => !$bonus->is_active]);
         return response()->json(DEFAULT_STATUS_UPDATE_200, 200);
     }
 
@@ -196,7 +317,7 @@ class BonusController extends Controller
      */
     public function download(Request $request): string|StreamedResponse
     {
-        $items = $this->bonus
+        $items = $this->bonus->withoutGlobalScope('translate')
         ->when($request->has('search'), function ($query) use ($request) {
             $keys = explode(' ', $request['search']);
             return $query->where(function ($query) use ($keys) {

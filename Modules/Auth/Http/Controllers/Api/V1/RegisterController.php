@@ -37,8 +37,8 @@ class RegisterController extends Controller
         $validator = Validator::make($request->all(), [
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email|unique:users',
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|unique:users',
+            'email' => 'required|email',
+            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10',
             'password' => 'required|min:8',
             'gender' => 'in:male,female,others',
             'confirm_password' => 'required|same:password',
@@ -47,6 +47,14 @@ class RegisterController extends Controller
 
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 403);
+        }
+
+        //email & phone check
+        if (User::where('email', $request['email'])->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"email","message"=>translate('Email already taken')]]), 400);
+        }
+        if (User::where('phone', $request['phone'])->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"phone","message"=>translate('Phone already taken')]]), 400);
         }
 
         $user = $this->user;
@@ -96,15 +104,15 @@ class RegisterController extends Controller
             'account_first_name' => 'required',
             'account_last_name' => 'required',
             'zone_id' => 'required|uuid',
-            'account_email' => 'required|email|unique:users,email',
-            'account_phone' => 'required|unique:users,phone',
+            'account_email' => 'required|email',
+            'account_phone' => 'required',
             'password' => 'required|min:8',
             'confirm_password' => 'required|same:password',
 
             'company_name' => 'required',
-            'company_phone' => 'required|unique:providers',
+            'company_phone' => 'required',
             'company_address' => 'required',
-            'company_email' => 'required|email|unique:providers',
+            'company_email' => 'required|email',
             'logo' => 'required|image|mimes:jpeg,jpg,png,gif|max:10000',
 
             'identity_type' => 'required|in:passport,driving_license,nid,trade_license,company_id',
@@ -118,6 +126,14 @@ class RegisterController extends Controller
 
         if ($validator->fails()) {
             return response()->json(response_formatter(DEFAULT_400, null, error_processor($validator)), 400);
+        }
+
+        //email & phone check
+        if (User::where('email', $request['account_email'])->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"account_email","message"=>translate('Email already taken')]]), 400);
+        }
+        if (User::where('phone', $request['account_phone'])->exists()) {
+            return response()->json(response_formatter(DEFAULT_400, null, [["error_code"=>"account_phone","message"=>translate('Phone already taken')]]), 400);
         }
 
         $identity_images = [];

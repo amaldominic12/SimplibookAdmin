@@ -64,9 +64,13 @@ class PostController extends Controller
                 });
             })
             ->when($request->has('status') && $request['status'] == 'new_request', function ($query) use ($request) {
-                $query->whereDoesntHave('bids', function ($query) use ($request) {
-                    $query->where('provider_id', $request->user()->provider->id);
-                });
+                if(!$request->user()?->provider?->is_suspended || !business_config('suspend_on_exceed_cash_limit_provider', 'provider_config')->live_values){
+                    $query->whereDoesntHave('bids', function ($query) use ($request) {
+                        $query->where('provider_id', $request->user()->provider->id);
+                    });
+                }else{
+                    $query->whereNull('id');
+                }
             })
             ->latest()
             ->paginate($request['limit'], ['*'], 'offset', $request['offset'])

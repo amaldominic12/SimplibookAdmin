@@ -13,5 +13,9 @@ Route::group(['prefix' => 'customer', 'as' => 'customer.', 'namespace' => 'Api\V
         Route::delete('remove/{id}', [CartController::class, 'remove']);
         Route::delete('data/empty', [CartController::class, 'empty_cart']);
     });
+
+    Route::group(['prefix' => 'rebook', 'as' => 'rebook.',], function () {
+        Route::post('cart-add', [CartController::class, 'rebook_add_to_cart']);
+    });
 });
 
